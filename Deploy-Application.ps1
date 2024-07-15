@@ -94,8 +94,8 @@ Try {
 	$KeyVaultName = $MigrationConfig.KeyVaultName
 	$TempUserKey = $MigrationConfig.TempUserKey
 	$TempPassKey = $MigrationConfig.TempPassKey
-	$DomainLeaveUserKey = $MigrationConfig.DomainLeaveUserKey
-	$DomainLeavePassKey = $MigrationConfig.DomainLeavePassKey
+	$DomainLeaverUserKey = $MigrationConfig.DomainLeaverUserKey
+	$DomainLeaverPassKey = $MigrationConfig.DomainLeaverPassKey
 	$TenantID = $MigrationConfig.TenantID
 	##* Do not modify section below
 	#region DoNotModify
@@ -379,8 +379,8 @@ Try {
 				[String]$TempPassword = Get-KeyVaultSecret $TempPassKey				
 				[String]$TempUser = Get-KeyVaultSecret $TempUserKey
 
-				[String]$DomainLeaverPass = Get-KeyVaultSecret $DomainLeavePassKey				
-				[String]$DomainLeaverUser = Get-KeyVaultSecret $DomainLeaveUserKey 
+				[String]$DomainLeaverPass = Get-KeyVaultSecret $DomainLeaverPassKey				
+				[String]$DomainLeaverUser = Get-KeyVaultSecret $DomainLeaverUserKey 
 				
 				#Check if device is domain joined, if joined remove from domain
 				$ComputerDomain = Get-WmiObject -Class Win32_ComputerSystem | Select-Object PartOfDomain,domain
@@ -400,7 +400,7 @@ Try {
 						If($DomainLeaverUser){
 
 							$pw = $DomainLeaverPass | ConvertTo-SecureString -asPlainText -Force
-							$usr = $DomainLeaveUser
+							$usr = $DomainLeaverUser
 							$creds = New-Object System.Management.Automation.PSCredential($usr, $pw)
 							$pc = "localhost"
 

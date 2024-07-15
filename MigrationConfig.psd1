@@ -15,9 +15,9 @@
 	#Key for retrieving password
 	TempPassKey = "TempUserPassword"
 	#Key for retrieving DomainLeaver
-	DomainLeaverKey = "DomainLeaverUser"
+	DomainLeaverUserKey = "DomainLeaveUser"
 	#Key for retrieving password
-	DomainLeaverPassKey = "DomainLeaverPassword"
+	DomainLeaverPassKey = "DomainLeavePass"
 	
 	#Entra ID application for connecting to KeyVault
 	ClientId = "a711f96d-1219-48dc-b880-53a4371d4b0b"
