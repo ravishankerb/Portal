@@ -1,20 +1,16 @@
+$MigrationPath = "C:\ProgramData\AADMigration"
 Start-Transcript -Path C:\ProgramData\AADMigration\Logs\AD2AADJ-Prep.txt -Append -Force
 
-$MigrationConfig = Import-LocalizedData -BaseDirectory ".\" -FileName "MigrationConfig.psd1"
+#Expand AAD Migration zip file to ProgramData
+Expand-Archive "$PSScriptRoot\AADMigration.zip" -DestinationPath C:\ProgramData -Force
+. $MigrationPath\Scripts\LogMigrationStatus.ps1
+
+$MigrationConfig = Import-LocalizedData -BaseDirectory "$MigrationPath\Scripts" -FileName "MigrationConfig.psd1"
 $MigrationPath = $MigrationConfig.MigrationPath
 $TenantID = $MigrationConfig.TenantID
 $OneDriveKFM = $MigrationConfig.UseOneDriveKFM
 $InstallOneDrive = $MigrationConfig.InstallOneDrive
 $StartBoundary = $MigrationConfig.StartBoundary
-
-
-Function Add-MigrationDirectory{
-
-    #Expand AAD Migration zip file to ProgramData
-    Expand-Archive "$PSScriptRoot\AADMigration.zip" -DestinationPath C:\ProgramData -Force
-    Copy-Item -Path "$PSScriptRoot\MigrationConfig.psd1" -Destination "$MigrationPath\Module"
-
-}
 
 function Set-RegistryValue {
 
@@ -109,7 +105,19 @@ function Set-ODKFMSettings{
     Set-RegistryValue $RegKeyPath $RegValName $RegValType $RegValData
 
     #Create EventLog Source
-    New-EventLog -LogName 'Application' -Source 'AAD_Migration_Script' -ErrorAction Stop
+    $sourceExists = $false
+    try
+    {
+        $sourceExists = [System.Diagnostics.EventLog]::SourceExists($SourceName)
+        $sourceExists = $rue
+    }
+    catch
+    {
+    }
+    if ($sourceExists = $false)
+    {
+        New-EventLog -LogName 'Application' -Source 'AAD_Migration_Script' -ErrorAction Stop        
+    }
 
     #Create scheduled task to check OneDrive sync status
     $TaskPath = "AAD Migration"
@@ -130,52 +138,68 @@ function Set-ODKFMSettings{
     $Task.Triggers.repetition.Interval  = "PT30M"
     $Task | Set-ScheduledTask
 
+    Insert-MigrationStatus "Preparing Device" "Created task to get OneDrive status" "Prepare-DeviceMigration.ps1" "Info"
+
 }
 
 
 Function Install-OneDrive{
 
     #Check for OneDrive machine-wide installer, check version number if it exists
-    $ODSetupVersion = (Get-ChildItem -Path "$PSScriptRoot\AADMigration\Files\OneDriveSetup.exe").VersionInfo.FileVersion
 
+    If(Test-Path -Path "$MigrationPath\Files\OneDriveSetup.exe"){
+
+    
+        $ODSetupVersion = (Get-ChildItem -Path "$MigrationPath\Files\OneDriveSetup.exe").VersionInfo.FileVersion
+
+    }
 
     If(!$ODSetupVersion){
 
-        Invoke-WebRequest "https://go.microsoft.com/fwlink/?linkid=844652" -OutFile "$PSScriptRoot\Files\OneDriveSetup.exe"  -Wait
-        $ODSetupVersion = (Get-ChildItem -Path "$PSScriptRoot\Files\OneDriveSetup.exe").VersionInfo.FileVersion
+        Invoke-WebRequest "https://go.microsoft.com/fwlink/?linkid=844652" -OutFile "$MigrationPath\Files\OneDriveSetup.exe"  
+        $ODSetupVersion = (Get-ChildItem -Path "$MigrationPath\Files\OneDriveSetup.exe").VersionInfo.FileVersion
 
     }
 
     $ODRegKey = "HKLM:\SOFTWARE\Microsoft\OneDrive"
 
-    $InstalledVer = Get-ItemPropertyValue -Path $ODRegKey -Name Version
+    $InstalledVer = Get-ItemPropertyValue -Path $ODRegKey -Name Version -ErrorAction Stop
+    if (!($?))
+    {
+        Insert-MigrationStatus "Preparing Device" $($Error[0].Exception.StackTrace) "Prepare-DeviceMigration.ps1" "Info"
+    }
 
-    If(!($ODRegKey) -or ([System.Version]$InstalledVer -lt [System.Version]$ODSetupVersion)){
+    If(!($InstalledVer) -or ([System.Version]$InstalledVer -lt [System.Version]$ODSetupVersion)){
 
         #Install OneDrive setup
-        $Installer = "$PSScriptRoot\Files\OneDriveSetup.exe"
+        $Installer = "$MigrationPath\Files\OneDriveSetup.exe"
         $Arguments = "/allusers"
 
-        Test-Path
-
-        Start-Process -FilePath $Installer -ArgumentList $Arguments
+       Start-Process -FilePath $Installer -ArgumentList $Arguments
 
     } ElseIf($OneDriveKFM) {
 
         #If OneDrive is already installed, stop the process and restart to kick off KFM sync if required
-        Get-Process OneDrive | Stop-Process -Confirm:$false -Force
+        $ODProcess = Get-Process OneDrive 
 
-        Start-Sleep -Seconds 5  
+        If($ODProcess){
 
-        $action = New-ScheduledTaskAction -Execute "C:\Program Files\Microsoft Onedrive\OneDrive.exe" 
-        $trigger = New-ScheduledTaskTrigger -AtLogOn
-        $principal = New-ScheduledTaskPrincipal -UserId (Get-CimInstance -ClassName Win32_ComputerSystem | Select-Object -expand UserName)
-        $task = New-ScheduledTask -Action $action -Trigger $trigger -Principal $principal
-        Register-ScheduledTask OneDriveRemediation -InputObject $task
-        Start-ScheduledTask -TaskName OneDriveRemediation
-        Start-Sleep -Seconds 5
-        Unregister-ScheduledTask -TaskName OneDriveRemediation -Confirm:$false
+            $ODProcess | Stop-Process -Confirm:$false -Force
+ 
+            Start-Sleep -Seconds 5  
 
+            $action = New-ScheduledTaskAction -Execute "C:\Program Files\Microsoft Onedrive\OneDrive.exe" 
+            $trigger = New-ScheduledTaskTrigger -AtLogOn
+            $principal = New-ScheduledTaskPrincipal -UserId (Get-CimInstance -ClassName Win32_ComputerSystem | Select-Object -expand UserName)
+            $task = New-ScheduledTask -Action $action -Trigger $trigger -Principal $principal
+            Register-ScheduledTask OneDriveRemediation -InputObject $task
+            Start-ScheduledTask -TaskName OneDriveRemediation
+            Start-Sleep -Seconds 5
+            Unregister-ScheduledTask -TaskName OneDriveRemediation -Confirm:$false
+
+            Insert-MigrationStatus "Preparing Device" "Created and deleted OneDrive remediation task" "Prepare-DeviceMigration.ps1" "Info"
+
+        }
     }
 
 }
@@ -199,9 +223,10 @@ Function New-MigrationTask{
 
     $Task = Register-ScheduledTask -principal $principal -Action $Action -Trigger $Trigger -TaskName $TaskName -Description "AADM Launch PSADT for Interactive Migration" -TaskPath $TaskPath
 
+    Insert-MigrationStatus "Preparing Device" "Created Migration task" "Prepare-DeviceMigration.ps1" "Info"
 }
 
-Add-MigrationDirectory
+
 New-MigrationTask
 
 If($OneDriveKFM){
