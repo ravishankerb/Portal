@@ -408,6 +408,7 @@ Try {
 
 								Remove-Computer -ComputerName $PC -credential $creds -Verbose -Force -ErrorAction Stop
 								Disable-ScheduledTask -TaskName "AADM Launch PSADT for Interactive Migration" -TaskPath $TaskPath
+								Insert-MigrationStatus "Deploying Application" "Removed computer from AD using Domain credentials" "Deploy-Application.ps1" "Info"
 								Stop-Transcript
 								Restart-Computer
 
