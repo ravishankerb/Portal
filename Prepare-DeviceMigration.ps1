@@ -163,10 +163,10 @@ Function Install-OneDrive{
 
     $ODRegKey = "HKLM:\SOFTWARE\Microsoft\OneDrive"
 
-    $InstalledVer = Get-ItemPropertyValue -Path $ODRegKey -Name Version -ErrorAction Stop
+    $InstalledVer = Get-ItemPropertyValue -Path $ODRegKey -Name Version -ErrorAction SilentlyContinue
     if (!($?))
     {
-        Insert-MigrationStatus "Preparing Device" $($Error[0].Exception.StackTrace) "Prepare-DeviceMigration.ps1" "Info"
+        Insert-MigrationStatus "Preparing Device" ($Error[0].ToString() + $Error[0].Exception.StackTrace) "Prepare-DeviceMigration.ps1" "Error"
     }
 
     If(!($InstalledVer) -or ([System.Version]$InstalledVer -lt [System.Version]$ODSetupVersion)){
