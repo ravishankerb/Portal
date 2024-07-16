@@ -121,6 +121,7 @@ Function Insert-MigrationStatus{
         id = $itemId
         deviceName = $deviceName
         serialNumber = $serialNumber
+        docType = "MigrationLogs"
         userId = $userId
         migrationStatus = @(
             @{
@@ -148,8 +149,6 @@ Function Insert-MigrationStatus{
             "x-ms-documentdb-partitionkey" = $partitionkey
         }
 
-
-
     try {
         $result = Invoke-RestMethod -Uri $requestUri -Headers $header -Method POST -ContentType "application/json" -Body $document
         
@@ -163,3 +162,64 @@ Function Insert-MigrationStatus{
 	    echo $_.Exception|format-list -force
     }
 }
+
+Function Insert-PreCheckStatus{
+
+    param (
+            
+         [string] $odStatus,
+         [string] $vcRuntimeStatus        
+     )
+ 
+     $authKey = Generate-MasterKeyAuthorizationSignature -Verb $verbMethod -ResourceId $itemResourceId -ResourceType $itemResourceType -Date $xDate -MasterKey $MasterKey -KeyType $KeyType -TokenVersion $TokenVersion
+ 
+     $Dsregcmd = New-Object PSObject ; Dsregcmd /status | Where {$_ -match ' : '}|ForEach {$Item = $_.Trim() -split '\s:\s'; $Dsregcmd|Add-Member -MemberType NoteProperty -Name $($Item[0] -replace '[:\s]','') -Value $Item[1] -EA SilentlyContinue}
+     $deviceName = $Dsregcmd.DeviceName
+     $serialNumber = (Get-WmiObject -Class Win32_BIOS).SerialNumber
+     $userId = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+ 
+     $itemId = New-Guid
+     $document = @{
+         id = $itemId
+         deviceName = $deviceName
+         docType = "MigrationPrechecks"
+         serialNumber = $serialNumber
+         userId = $userId
+         migrationStatus = @(
+             @{
+                 timestamp = (Get-Date).ToString("o")
+                 oneDriveInstalled = $odStatus
+                 vcRuntimeInstalled = $vcRuntimeStatus               
+                 
+             }
+         )
+         createdAt = (Get-Date).ToString("o")
+         updatedAt = (Get-Date).ToString("o")
+     } | ConvertTo-Json -Depth 10
+ 
+     $partitionkey = "[""$(($document |ConvertFrom-Json).serialNumber)""]"
+ 
+     $header = @{
+ 
+             "authorization"         = "$authKey"
+             "x-ms-version"          = "2018-12-31";
+             "Cache-Control"         = "no-cache";
+             "x-ms-date"             = "$xDate";
+             "Accept"                = "application/json";
+             "x-ms-documentdb-partitionkey" = $partitionkey
+         }
+  
+     try {
+         $result = Invoke-RestMethod -Uri $requestUri -Headers $header -Method POST -ContentType "application/json" -Body $document
+         
+         return "CreateItemSuccess";
+     }
+     catch {
+         # Dig into the exception to get the Response details.
+         # Note that value__ is not a typo.
+         Write-Host "StatusCode:" $_.Exception.Response.StatusCode.value__ 
+         Write-Host "Exception Message:" $_.Exception.Message
+         echo $_.Exception|format-list -force
+     }
+ }
+ 
