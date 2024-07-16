@@ -1,3 +1,5 @@
+$MigrationPath = "C:\ProgramData\AADMigration"
+. $MigrationPath\Scripts\LogMigrationStatus.ps1
 
 # Get the Windows version information
 $osVersion = (Get-ComputerInfo).OsVersion
@@ -18,7 +20,7 @@ if ($Win11 = $true)
     #Create objects with known statuses listed.
     $Success = @( "Synced" )
     $InProgress = @( "Syncing" )
-    $Failed = $( "Error" , "Error" , "Paused")
+    $Failed = $( "Error" , "Offline" , "Paused")
 }
 else
 {
@@ -45,6 +47,15 @@ ForEach($s in $Status){
     else {
         $StatusString = $s.StatusString
         $DisplayName = $s.DisplayName   
+
+        If(!($Status.StatusString)){
+
+            Write-EventLog -LogName 'Application' -Source 'AAD_Migration_Script' -EntryType Information -EventId 1340 `
+                -Message "Unable to get OneDrive Sync Status."  
+                  
+            $details = "1340:Unable to get OneDrive Sync Status."
+            Insert-MigrationStatus "Checking OneDrive Status" $details "Check-OneDriveSyncStatus.ps1" "Error"
+        }
     }
 
     $User = $s.UserName
@@ -53,31 +64,33 @@ ForEach($s in $Status){
 
         Write-EventLog -LogName 'Application' -Source 'AAD_Migration_Script' -EntryType Information -EventId 1337 `
             -Message "The OneDrive sync status is healthy. The following values were returned: OneDrive Display Name: $DisplayName, User: $User, Status: $StatusString"
+        $details ="1337:The OneDrive sync status is healthy. The following values were returned: OneDrive Display Name: $DisplayName, User: $User, Status: $StatusString"
+        
+        Insert-MigrationStatus "Checking OneDrive Status" $details "Check-OneDriveSyncStatus.ps1" "Info"
 
 
     } elseif ($StatusString -in $InProgress) {
         
         Write-EventLog -LogName 'Application' -Source 'AAD_Migration_Script' -EntryType Information -EventId 1338 `
         -Message "The OneDrive sync status is currently syncing. The following values were returned: OneDrive Display Name: $DisplayName, User: $User, Status: $StatusString"
+        $details = "1338:The OneDrive sync status is currently syncing. The following values were returned: OneDrive Display Name: $DisplayName, User: $User, Status: $StatusString"
+        
+        Insert-MigrationStatus "Checking OneDrive Status" $details "Check-OneDriveSyncStatus.ps1" "Info"
 
     } elseif ($StatusString -in $Failed) {
 
         Write-EventLog -LogName 'Application' -Source 'AAD_Migration_Script' -EntryType Information -EventId 1339 `
         -Message "The OneDrive sync status is in a known error state. The following values were returned: OneDrive Display Name: $DisplayName, User: $User, Status: $StatusString"
+        $details = "1339:The OneDrive sync status is in a known error state. The following values were returned: OneDrive Display Name: $DisplayName, User: $User, Status: $StatusString"
+        Insert-MigrationStatus "Checking OneDrive Status" $details "Check-OneDriveSyncStatus.ps1" "Error"
 
     } elseif(!($StatusString)){
         
         Write-EventLog -LogName 'Application' -Source 'AAD_Migration_Script' -EntryType Information -EventId 1340 `
         -Message "Unable to get OneDrive Sync Status."
+        $details = "1340:Unable to get OneDrive Sync Status."
+        Insert-MigrationStatus "Checking OneDrive Status" $details "Check-OneDriveSyncStatus.ps1" "Error"
 
-    }
-
-    If(!($StatusString)){
-
-        Write-EventLog -LogName 'Application' -Source 'AAD_Migration_Script' -EntryType Information -EventId 1340 `
-            -Message "Unable to get OneDrive Sync Status."
-
-
-    }
+    }    
 
 }
