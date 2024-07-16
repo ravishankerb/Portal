@@ -26,7 +26,7 @@
 
 	#cosmos db variables
 	DatabaseId = "migrationlogs"
-	ContainerId = "devicemigration"
+	ContainerId = "logs"
 	CosmosDBAccount = "aadusermigration"
 
 	#Key for getting MasterKey for Cosmos DB from KeyVault
