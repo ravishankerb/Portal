@@ -113,14 +113,14 @@ Function Insert-MigrationStatus{
 
     $Dsregcmd = New-Object PSObject ; Dsregcmd /status | Where {$_ -match ' : '}|ForEach {$Item = $_.Trim() -split '\s:\s'; $Dsregcmd|Add-Member -MemberType NoteProperty -Name $($Item[0] -replace '[:\s]','') -Value $Item[1] -EA SilentlyContinue}
     $deviceName = $Dsregcmd.DeviceName
-    $deviceId = $Dsregcmd.DeviceId
+    $serialNumber = (Get-WmiObject -Class Win32_BIOS).SerialNumber
     $userId = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 
     $itemId = New-Guid
     $document = @{
         id = $itemId
         deviceName = $deviceName
-        deviceid = $deviceId
+        serialNumber = $serialNumber
         userId = $userId
         migrationStatus = @(
             @{
@@ -136,7 +136,7 @@ Function Insert-MigrationStatus{
         updatedAt = (Get-Date).ToString("o")
     } | ConvertTo-Json -Depth 10
 
-    $partitionkey = "[""$(($document |ConvertFrom-Json).deviceid)""]"
+    $partitionkey = "[""$(($document |ConvertFrom-Json).serialNumber)""]"
 
     $header = @{
 
