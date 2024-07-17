@@ -143,11 +143,49 @@ function Set-ODKFMSettings{
 
 }
 
+Function Install-VCRuntime{
+
+    If(Test-Path -Path "$MigrationPath\Files\VC_redist.x64.exe"){
+    
+        $VcRuntimeSetupVersion = (Get-ChildItem -Path "$MigrationPath\Files\VC_redist.x64.exe").VersionInfo.FileVersion
+
+    }
+
+    If(!$VcRuntimeSetupVersion){
+
+    Invoke-WebRequest "https://aka.ms/vs/17/release/vc_redist.x64.exe" -OutFile "$MigrationPath\Files\VC_redist.x64.exe"  
+    $VcRuntimeSetupVersion = (Get-ChildItem -Path "$MigrationPath\Files\VC_redist.x64.exe").VersionInfo.FileVersion
+
+    }
+        
+    $uninstallKey64 = "HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
+
+    $installedApps64 = Get-ItemProperty -Path "$uninstallKey64\*" -ErrorAction SilentlyContinue
+    if (!($?))
+    {
+        Insert-MigrationStatus "Preparing Device" ($Error[0].ToString() + $Error[0].Exception.StackTrace) "Prepare-DeviceMigration.ps1" "Error"
+    }
+
+    $installed = $false
+    foreach ($app in $installedApps64) {
+        if ($app.DisplayName -like "Microsoft Visual C++ 2015-2022 Redistributable (x64) - 14.40.33810") {
+            $installed = $true
+            break
+        }
+    }
+    if (!$installed)
+    {
+        #Install OneDrive setup
+        $Installer = "$MigrationPath\Files\VC_redist.x64.exe"
+        $Arguments = "/q"
+
+        Start-Process -FilePath $Installer -ArgumentList $Arguments
+    }
+}
 
 Function Install-OneDrive{
 
     #Check for OneDrive machine-wide installer, check version number if it exists
-
     If(Test-Path -Path "$MigrationPath\Files\OneDriveSetup.exe"){
 
     
@@ -241,6 +279,7 @@ If($InstallOneDrive){
     Install-OneDrive
 
 }
+
 # Define the interval (in minutes) before re-prompting the user
 $deferInterval = 10
 # Define the maximum number of deferrals
