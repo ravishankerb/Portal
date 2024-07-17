@@ -1,0 +1,52 @@
+$MigrationPath = "C:\ProgramData\AADMigration"
+# Define the interval (in minutes) before re-prompting the user
+$deferInterval = 10
+# Define the maximum number of deferrals
+$maxDefers = 3
+$deferCount = 0
+
+
+# Function to prompt the user
+function Prompt-Restart {
+    Add-Type -AssemblyName System.Windows.Forms
+    [System.Windows.Forms.Application]::EnableVisualStyles()
+    $result = [System.Windows.Forms.MessageBox]::Show($message, "Restart Required", [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question)
+    return $result
+}
+
+
+# Function to create the scheduled task
+function Create-ScheduledTask {
+    $scriptPath = "$MigrationPath\Scripts\RestartComputer.ps1" # Path to this script
+    $action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-NoProfile -WindowStyle Hidden -File `"$scriptPath`""
+    $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes($deferInterval) -RepetitionInterval (New-TimeSpan -Minutes $deferInterval) -RepetitionDuration (New-TimeSpan -Hours 56 -Minutes 55)
+    $principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType ServiceAccount -RunLevel Highest
+    Register-ScheduledTask -TaskName "RestartPromptTask" -Action $action -Trigger $trigger -Principal $principal -Description "Prompt user to restart computer with option to defer"
+
+}
+
+$message = "Your computer needs to restart. Do you want to restart now?"
+
+# Main script logic
+while ($deferCount -lt $maxDefers) {
+    $userChoice = Prompt-Restart
+    if ($userChoice -eq [System.Windows.Forms.DialogResult]::Yes) {
+        Restart-Computer -Force
+        break
+    } else {
+        Write-Host "User chose to defer the restart. Will prompt again in $deferInterval minutes."
+        $deferCount++
+        if ($deferCount -eq 1) {
+            Create-ScheduledTask
+        }
+        Start-Sleep -Seconds ($deferInterval * 60)
+    }
+}
+
+# If max defers reached, force restart
+if ($deferCount -ge $maxDefers) {
+    Write-Host "Maximum deferrals reached. Restarting the computer now."
+    Restart-Computer -Force
+}
+
+

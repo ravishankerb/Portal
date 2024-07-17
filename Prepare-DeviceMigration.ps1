@@ -2,8 +2,9 @@ $MigrationPath = "C:\ProgramData\AADMigration"
 Start-Transcript -Path C:\ProgramData\AADMigration\Logs\AD2AADJ-Prep.txt -Append -Force
 
 #Expand AAD Migration zip file to ProgramData
-Expand-Archive "$PSScriptRoot\AADMigration.zip" -DestinationPath C:\ProgramData -Force
+#Expand-Archive "$PSScriptRoot\AADMigration.zip" -DestinationPath C:\ProgramData -Force
 . $MigrationPath\Scripts\LogMigrationStatus.ps1
+. $MigrationPath\Scripts\RestartComputer.ps1
 
 $MigrationConfig = Import-LocalizedData -BaseDirectory "$MigrationPath\Scripts" -FileName "MigrationConfig.psd1"
 $MigrationPath = $MigrationConfig.MigrationPath
@@ -239,6 +240,36 @@ If($InstallOneDrive){
 
     Install-OneDrive
 
+}
+# Define the interval (in minutes) before re-prompting the user
+$deferInterval = 10
+# Define the maximum number of deferrals
+$maxDefers = 3
+$deferCount = 0
+
+# Define the message to display to the user
+$message = "Your computer needs to restart. Do you want to restart now?"
+
+# Main script logic
+while ($deferCount -lt $maxDefers) {
+    $userChoice = Prompt-Restart
+    if ($userChoice -eq [System.Windows.Forms.DialogResult]::Yes) {
+        Restart-Computer -Force
+        break
+    } else {
+        Write-Host "User chose to defer the restart. Will prompt again in $deferInterval minutes."
+        $deferCount++
+        if ($deferCount -eq 1) {
+            Create-ScheduledTask
+        }
+        Start-Sleep -Seconds ($deferInterval * 60)
+    }
+}
+
+# If max defers reached, force restart
+if ($deferCount -ge $maxDefers) {
+    Write-Host "Maximum deferrals reached. Restarting the computer now."
+    Restart-Computer -Force
 }
 
 
