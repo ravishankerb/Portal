@@ -16,13 +16,15 @@ function Get-OneDriveStatus {
             $DisplayName = $s.DisplayName   
             $s.UserName   
             If(!($StatusString)){           
-                Disable-ScheduledTask -TaskName "OneDrive SignIn Check" -TaskPath $TaskPath
+                #Disable-ScheduledTask -TaskName "OneDrive SignIn Check" -TaskPath $TaskPath
                 Write-Output "OneDrive is signed in."
+                return $true
               
             } else {
                 Write-Output "OneDrive is not signed in."
                 Prompt-OneDriveSignIn
-                Create-ScheduledTask
+                #Create-ScheduledTask
+                return $false
             }
         }
         
@@ -59,4 +61,4 @@ function Create-ScheduledTask {
 }
 
 
-Get-OneDriveStatus
+

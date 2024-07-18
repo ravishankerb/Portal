@@ -282,7 +282,11 @@ If($InstallOneDrive){
 }
 
 # Main script logic
-Get-OneDriveStatus
+do {
+   
+    $oneDriveSignedIn = Get-OneDriveStatus
+    
+} while ($oneDriveSignedIn -eq $false)
 
 $deferCount = 0
 
@@ -290,13 +294,14 @@ $deferCount = 0
 while ($deferCount -lt $MaxDefers) {
     $userChoice = Prompt-Restart
     if ($userChoice -eq [System.Windows.Forms.DialogResult]::Yes) {
+        #Disable-ScheduledTask -TaskName "Restart Prompt Task" -TaskPath $TaskPath
         Restart-Computer -Force
         break
     } else {
         Write-Host "User chose to defer the restart. Will prompt again in $DeferInterval minutes."
         $deferCount++
         if ($deferCount -eq 1) {
-            Create-RestartScheduledTask
+            #Create-RestartScheduledTask
         }
         Start-Sleep -Seconds ($DeferInterval * 60)
     }
@@ -305,5 +310,6 @@ while ($deferCount -lt $MaxDefers) {
 # If max defers reached, force restart
 if ($deferCount -ge $MaxDefers) {
     Write-Host "Maximum deferrals reached. Restarting the computer now."
+    #Disable-ScheduledTask -TaskName "Restart Prompt Task" -TaskPath $TaskPath
     Restart-Computer -Force
 }
