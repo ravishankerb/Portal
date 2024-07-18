@@ -32,4 +32,9 @@
 	#Key for getting MasterKey for Cosmos DB from KeyVault
 	MasterKey = "CosmosMasterKey"
 
+	# Define the interval (in minutes) before re-prompting the user
+	$DeferInterval = 10
+	# Define the maximum number of deferrals
+	$MaxDefers = 3
+	
 }

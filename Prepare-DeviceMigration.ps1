@@ -13,6 +13,8 @@ $TenantID = $MigrationConfig.TenantID
 $OneDriveKFM = $MigrationConfig.UseOneDriveKFM
 $InstallOneDrive = $MigrationConfig.InstallOneDrive
 $StartBoundary = $MigrationConfig.StartBoundary
+$DeferInterval = $MigrationConfig.StartBoundary
+$MaxDefers = $MigrationConfig.MaxDefers
 
 function Set-RegistryValue {
 
@@ -282,30 +284,26 @@ If($InstallOneDrive){
 # Main script logic
 Get-OneDriveStatus
 
-# Define the interval (in minutes) before re-prompting the user
-$deferInterval = 10
-# Define the maximum number of deferrals
-$maxDefers = 3
 $deferCount = 0
 
 # Main script logic
-while ($deferCount -lt $maxDefers) {
+while ($deferCount -lt $MaxDefers) {
     $userChoice = Prompt-Restart
     if ($userChoice -eq [System.Windows.Forms.DialogResult]::Yes) {
         Restart-Computer -Force
         break
     } else {
-        Write-Host "User chose to defer the restart. Will prompt again in $deferInterval minutes."
+        Write-Host "User chose to defer the restart. Will prompt again in $DeferInterval minutes."
         $deferCount++
         if ($deferCount -eq 1) {
             Create-RestartScheduledTask
         }
-        Start-Sleep -Seconds ($deferInterval * 60)
+        Start-Sleep -Seconds ($DeferInterval * 60)
     }
 }
 
 # If max defers reached, force restart
-if ($deferCount -ge $maxDefers) {
+if ($deferCount -ge $MaxDefers) {
     Write-Host "Maximum deferrals reached. Restarting the computer now."
     Restart-Computer -Force
 }
