@@ -26,10 +26,6 @@ function Create-RestartScheduledTask {
 
 $message = "Your computer needs to restart. Do you want to restart now?"
 
-if ($MyInvocation.MyCommand.Path -eq $PSCommandPath) {
-    Write-Host "This script is meant to be dot-sourced or imported, not executed directly."
-    exit
-}
 
 # Main script logic
 while ($deferCount -lt $maxDefers) {
@@ -41,7 +37,7 @@ while ($deferCount -lt $maxDefers) {
         Write-Host "User chose to defer the restart. Will prompt again in $deferInterval minutes."
         $deferCount++
         if ($deferCount -eq 1) {
-            Create-RestartScheduledTask
+            Create-ScheduledTask
         }
         Start-Sleep -Seconds ($deferInterval * 60)
     }
