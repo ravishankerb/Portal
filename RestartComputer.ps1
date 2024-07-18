@@ -36,6 +36,7 @@ if ($MyInvocation.MyCommand.Path -eq $PSCommandPath) {
 while ($deferCount -lt $maxDefers) {
     $userChoice = Prompt-Restart
     if ($userChoice -eq [System.Windows.Forms.DialogResult]::Yes) {
+        Disable-ScheduledTask -TaskName "Restart Prompt Task" -TaskPath $TaskPath
         Restart-Computer -Force
         break
     } else {
@@ -51,5 +52,6 @@ while ($deferCount -lt $maxDefers) {
 # If max defers reached, force restart
 if ($deferCount -ge $maxDefers) {
     Write-Host "Maximum deferrals reached. Restarting the computer now."
+    Disable-ScheduledTask -TaskName "Restart Prompt Task" -TaskPath $TaskPath
     Restart-Computer -Force
 }
