@@ -4,8 +4,8 @@ Start-Transcript -Path C:\ProgramData\AADMigration\Logs\AD2AADJ-Prep.txt -Append
 #Expand AAD Migration zip file to ProgramData
 Expand-Archive "$PSScriptRoot\AADMigration.zip" -DestinationPath C:\ProgramData -Force
 . $MigrationPath\Scripts\LogMigrationStatus.ps1
-. $MigrationPath\Scripts\RestartComputer.ps1
-. $MigrationPath\Scripts\OneDriveSignInCheck.ps1
+#. $MigrationPath\Scripts\RestartComputer.ps1
+#. $MigrationPath\Scripts\OneDriveSignInCheck.ps1
 
 $MigrationConfig = Import-LocalizedData -BaseDirectory "$MigrationPath\Scripts" -FileName "MigrationConfig.psd1"
 $MigrationPath = $MigrationConfig.MigrationPath
@@ -267,6 +267,61 @@ Function New-MigrationTask{
     Insert-MigrationStatus "Preparing Device" "Created Migration task" "Prepare-DeviceMigration.ps1" "Info"
 }
 
+# Function to prompt the user
+function Prompt-Restart {
+    Add-Type -AssemblyName System.Windows.Forms
+    [System.Windows.Forms.Application]::EnableVisualStyles()
+    $result = [System.Windows.Forms.MessageBox]::Show($message, "Restart Required", [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question)
+    return $result
+}
+
+$oneDriveSignedIn = $false
+
+ 
+# Function to check OneDrive status
+function Get-OneDriveStatus {
+    $oneDriveProcess = Get-Process -Name OneDrive -ErrorAction SilentlyContinue
+    if ($oneDriveProcess) {
+        Write-Output "OneDrive is running."
+        
+        $Status = C:\ProgramData\AADMigration\Scripts\Get-ODStatus.ps1 -ExePath C:\ProgramData\AADMigration\Files
+        Set-ItemProperty -Path "HKCU:\Software\Microsoft\OneDrive" -Name "SilentAccountConfig" -Value 1
+        ForEach($s in $Status){
+            $StatusString = $s.StatusString
+            $DisplayName = $s.DisplayName   
+            $s.UserName   
+            If(!($StatusString)){           
+                #Disable-ScheduledTask -TaskName "OneDrive SignIn Check" -TaskPath $TaskPath
+                Write-Output "OneDrive is signed in."
+                return $true
+              
+            } else {
+                Write-Output "OneDrive is not signed in."
+                Prompt-OneDriveSignIn
+                #Create-ScheduledTask
+                return $false
+            }
+        }
+        
+    } else {
+        Write-Output "OneDrive is not running."
+        Start-Process "C:\Program Files\Microsoft OneDrive\OneDrive.exe"
+    }
+}
+
+# Function to prompt user to sign in to OneDrive
+function Prompt-OneDriveSignIn {
+    Add-Type -AssemblyName "System.Windows.Forms"
+    Add-Type -AssemblyName "Microsoft.VisualBasic"
+
+    $caption = "OneDrive Sign-In Required"
+    $message = "Please sign in to OneDrive to ensure your files are synced."
+    $buttons = [System.Windows.Forms.MessageBoxButtons]::OK
+    $icon = [System.Windows.Forms.MessageBoxIcon]::Warning
+    
+    $result = [System.Windows.Forms.MessageBox]::Show($message, $caption, $buttons, $icon)        
+    
+}
 
 New-MigrationTask
 
@@ -285,6 +340,7 @@ If($InstallOneDrive){
 do {
    
     $oneDriveSignedIn = Get-OneDriveStatus
+    Insert-MigrationStatus "Preparing Device" "oneDriveSignedIn returned $oneDriveSignedIn." "Prepare-DeviceMigration.ps1" "Info"
     
 } while ($oneDriveSignedIn -eq $false)
 
@@ -295,10 +351,12 @@ while ($deferCount -lt $MaxDefers) {
     $userChoice = Prompt-Restart
     if ($userChoice -eq [System.Windows.Forms.DialogResult]::Yes) {
         #Disable-ScheduledTask -TaskName "Restart Prompt Task" -TaskPath $TaskPath
+        Insert-MigrationStatus "Preparing Device" "User clicked Yes for restart." "Prepare-DeviceMigration.ps1" "Info"
         Restart-Computer -Force
         break
     } else {
         Write-Host "User chose to defer the restart. Will prompt again in $DeferInterval minutes."
+        Insert-MigrationStatus "Preparing Device" "User chose to defer the restart. Will prompt again in $DeferInterval minutes." "Prepare-DeviceMigration.ps1" "Info"
         $deferCount++
         if ($deferCount -eq 1) {
             #Create-RestartScheduledTask
@@ -310,6 +368,7 @@ while ($deferCount -lt $MaxDefers) {
 # If max defers reached, force restart
 if ($deferCount -ge $MaxDefers) {
     Write-Host "Maximum deferrals reached. Restarting the computer now."
+    Insert-MigrationStatus "Preparing Device" "Maximum deferrals reached. Restarting the computer now." "Prepare-DeviceMigration.ps1" "Info"
     #Disable-ScheduledTask -TaskName "Restart Prompt Task" -TaskPath $TaskPath
     Restart-Computer -Force
 }
