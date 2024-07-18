@@ -16,11 +16,12 @@ function Prompt-Restart {
 
 # Function to create the scheduled task
 function Create-RestartScheduledTask {
-   $scriptPath = "$MigrationPath\Scripts\RestartComputerScheduler.ps1" # Path to this script
+    $TaskPath = "AAD Migration"
+    $scriptPath = "$MigrationPath\Scripts\RestartComputerScheduler.ps1" # Path to this script
     $action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-NoProfile -WindowStyle Hidden -File `"$scriptPath`""
     $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes($deferInterval) -RepetitionInterval (New-TimeSpan -Minutes $deferInterval) -RepetitionDuration (New-TimeSpan -Hours 56 -Minutes 55)
     $principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME 
-    Register-ScheduledTask -TaskName "Restart Prompt Task" -Action $action -Trigger $trigger -Principal $principal -Description "Prompt user to restart computer with option to defer" -ErrorAction SilentlyContinue
+    Register-ScheduledTask -TaskName "Restart Prompt Task" -TaskPath $TaskPath -Action $action -Trigger $trigger -Principal $principal -Description "Prompt user to restart computer with option to defer" -ErrorAction SilentlyContinue
 
 }
 
