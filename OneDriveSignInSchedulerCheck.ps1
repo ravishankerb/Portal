@@ -51,7 +51,7 @@ function Create-ScheduledTask {
     $scriptPath = "$MigrationPath\Scripts\OneDriveSignInSchedulerCheck.ps1" # Path to this script
     # Schedule a task to check OneDrive status periodically
     $action = New-ScheduledTaskAction -Execute 'PowerShell.exe' -Argument "-NoProfile -WindowStyle Hidden -File `"$scriptPath`""
-    $trigger = New-ScheduledTaskTrigger -Daily -At 09:00AM
+    $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes 10) -RepetitionDuration ([TimeSpan]::MaxValue)
     $principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME
     $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
 
