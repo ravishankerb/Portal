@@ -1,8 +1,7 @@
 $MigrationPath = "C:\ProgramData\AADMigration"
 # Define the interval (in minutes) before re-prompting the user
-$deferInterval = 10
-# Define the maximum number of deferrals
-$maxDefers = 3
+$DeferInterval = $MigrationConfig.StartBoundary
+$MaxDefers = $MigrationConfig.MaxDefers
 $deferCount = 0
 
 # Function to prompt the user
@@ -29,24 +28,24 @@ $message = "Your computer needs to restart. Do you want to restart now?"
 
 
 # Main script logic
-while ($deferCount -lt $maxDefers) {
+while ($deferCount -lt $MaxDefers) {
     $userChoice = Prompt-Restart
     if ($userChoice -eq [System.Windows.Forms.DialogResult]::Yes) {
         Disable-ScheduledTask -TaskName "Restart Prompt Task" -TaskPath $TaskPath
         Restart-Computer -Force
         break
     } else {
-        Write-Host "User chose to defer the restart. Will prompt again in $deferInterval minutes."
+        Write-Host "User chose to defer the restart. Will prompt again in $DeferInterval minutes."
         $deferCount++
         if ($deferCount -eq 1) {
             Create-ScheduledTask
         }
-        Start-Sleep -Seconds ($deferInterval * 60)
+        Start-Sleep -Seconds ($DeferInterval * 60)
     }
 }
 
 # If max defers reached, force restart
-if ($deferCount -ge $maxDefers) {
+if ($deferCount -ge $MaxDefers) {
     Write-Host "Maximum deferrals reached. Restarting the computer now."
     Disable-ScheduledTask -TaskName "Restart Prompt Task" -TaskPath $TaskPath
     Restart-Computer -Force

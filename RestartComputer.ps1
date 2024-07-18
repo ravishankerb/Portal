@@ -1,8 +1,8 @@
 $MigrationPath = "C:\ProgramData\AADMigration"
+$MigrationConfig = Import-LocalizedData -BaseDirectory "$MigrationPath\Scripts" -FileName "MigrationConfig.psd1"
 # Define the interval (in minutes) before re-prompting the user
-$deferInterval = 10
-# Define the maximum number of deferrals
-$maxDefers = 3
+$DeferInterval = $MigrationConfig.StartBoundary
+$MaxDefers = $MigrationConfig.MaxDefers
 $deferCount = 0
 
 # Function to prompt the user
@@ -19,7 +19,7 @@ function Create-RestartScheduledTask {
     $TaskPath = "AAD Migration"
     $scriptPath = "$MigrationPath\Scripts\RestartComputerScheduler.ps1" # Path to this script
     $action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-NoProfile -WindowStyle Hidden -File `"$scriptPath`""
-    $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes($deferInterval) -RepetitionInterval (New-TimeSpan -Minutes $deferInterval) -RepetitionDuration (New-TimeSpan -Hours 56 -Minutes 55)
+    $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes($DeferInterval) -RepetitionInterval (New-TimeSpan -Minutes $DeferInterval) -RepetitionDuration (New-TimeSpan -Hours 56 -Minutes 55)
     $principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME 
     Register-ScheduledTask -TaskName "Restart Prompt Task" -TaskPath $TaskPath -Action $action -Trigger $trigger -Principal $principal -Description "Prompt user to restart computer with option to defer" -ErrorAction SilentlyContinue
 
@@ -33,24 +33,24 @@ if ($MyInvocation.MyCommand.Path -eq $PSCommandPath) {
 }
 
 # Main script logic
-while ($deferCount -lt $maxDefers) {
+while ($deferCount -lt $MaxDefers) {
     $userChoice = Prompt-Restart
     if ($userChoice -eq [System.Windows.Forms.DialogResult]::Yes) {
         Disable-ScheduledTask -TaskName "Restart Prompt Task" -TaskPath $TaskPath
         Restart-Computer -Force
         break
     } else {
-        Write-Host "User chose to defer the restart. Will prompt again in $deferInterval minutes."
+        Write-Host "User chose to defer the restart. Will prompt again in $DeferInterval minutes."
         $deferCount++
         if ($deferCount -eq 1) {
             Create-RestartScheduledTask
         }
-        Start-Sleep -Seconds ($deferInterval * 60)
+        Start-Sleep -Seconds ($DeferInterval * 60)
     }
 }
 
 # If max defers reached, force restart
-if ($deferCount -ge $maxDefers) {
+if ($deferCount -ge $MaxDefers) {
     Write-Host "Maximum deferrals reached. Restarting the computer now."
     Disable-ScheduledTask -TaskName "Restart Prompt Task" -TaskPath $TaskPath
     Restart-Computer -Force
