@@ -269,6 +269,7 @@ Function New-MigrationTask{
 
 # Function to prompt the user
 function Prompt-Restart {
+    $message = "Your computer needs to restart. Do you want to restart now?"
     Add-Type -AssemblyName System.Windows.Forms
     [System.Windows.Forms.Application]::EnableVisualStyles()
     $result = [System.Windows.Forms.MessageBox]::Show($message, "Restart Required", [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question)
@@ -352,7 +353,7 @@ while ($deferCount -lt $MaxDefers) {
     if ($userChoice -eq [System.Windows.Forms.DialogResult]::Yes) {
         #Disable-ScheduledTask -TaskName "Restart Prompt Task" -TaskPath $TaskPath
         Insert-MigrationStatus "Preparing Device" "User clicked Yes for restart." "Prepare-DeviceMigration.ps1" "Info"
-        Restart-Computer -Force
+        #Restart-Computer -Force
         break
     } else {
         Write-Host "User chose to defer the restart. Will prompt again in $DeferInterval minutes."
