@@ -56,9 +56,5 @@ function Create-ScheduledTask {
     Register-ScheduledTask -TaskName "OneDrive SignIn Check" -Action $action -Trigger $trigger -Principal $principal -Settings $settings -ErrorAction SilentlyContinue
 }
 
-if ($MyInvocation.MyCommand.Path -eq $PSCommandPath) {
-    Write-Host "This script is meant o be dot-sourced or imported, not executed directly."
-    exit
-}
 
 Get-OneDriveStatus

@@ -46,6 +46,7 @@ function Prompt-OneDriveSignIn {
 }
 
 function Create-ScheduledTask {
+    $TaskPath = "AAD Migration"
     $scriptPath = "$MigrationPath\Scripts\OneDriveSignInSchedulerCheck.ps1" # Path to this script
     # Schedule a task to check OneDrive status periodically
     $action = New-ScheduledTaskAction -Execute 'PowerShell.exe' -Argument "-NoProfile -WindowStyle Hidden -File `"$scriptPath`""
@@ -53,7 +54,7 @@ function Create-ScheduledTask {
     $principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME
     $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
 
-    Register-ScheduledTask -TaskName "OneDrive SignIn Check" -Action $action -Trigger $trigger -Principal $principal -Settings $settings -ErrorAction SilentlyContinue
+    Register-ScheduledTask -TaskName "OneDrive SignIn Check" -TaskPath $TaskPath -Action $action -Trigger $trigger -Principal $principal -Settings $settings -ErrorAction SilentlyContinue
 }
 
 Get-OneDriveStatus
