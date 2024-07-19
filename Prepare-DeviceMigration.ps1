@@ -333,6 +333,8 @@ If($OneDriveKFM){
 
 }
 
+Install-VCRuntime
+
 If($InstallOneDrive){
 
     Install-OneDrive
