@@ -313,48 +313,51 @@ Try {
 				#Check to see if device is enrolled in Intune, if it is unenroll it by clearing registry keys, deleting scheduled task, and deleting enrollment certificates
 				#Special thanks to  @philhelming. This function was borrowed from his Intune to WS1 Migration script, which can be found here: https://github.com/helmlingp/apps_WS1UEMWin10Migration/blob/master/IntunetoWS1Win10Migration.ps1
 				$OMADMPath = "HKLM:\SOFTWARE\Microsoft\Provisioning\OMADM\Accounts\*"
-				$Account = (Get-ItemProperty -Path $OMADMPath -ErrorAction SilentlyContinue).PSChildname
+				$Accounts = (Get-ItemProperty -Path $OMADMPath -ErrorAction SilentlyContinue).PSChildname
+				
+				foreach ($Account in $Accounts) {
+					$Enrolled = $true
+					$EnrollmentPath = "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Enrollments\$Account"
+					$EnrollmentUPN = (Get-ItemProperty -Path $EnrollmentPath -ErrorAction SilentlyContinue).UPN
+					$ProviderID = (Get-ItemProperty -Path $EnrollmentPath -ErrorAction SilentlyContinue).ProviderID
 
-				$Enrolled = $true
-				$EnrollmentPath = "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Enrollments\$Account"
-				$EnrollmentUPN = (Get-ItemProperty -Path $EnrollmentPath -ErrorAction SilentlyContinue).UPN
-				$ProviderID = (Get-ItemProperty -Path $EnrollmentPath -ErrorAction SilentlyContinue).ProviderID
-
-				if(!($EnrollmentUPN) -or $ProviderID -ne "MS DM Server") {
-					$Enrolled = $false
-				}
-
-				If($Enrolled){
-
-					#Delete Task Schedule tasks
-					Get-ScheduledTask -TaskPath "\Microsoft\Windows\EnterpriseMgmt\$Account\*" | Unregister-ScheduledTask -Confirm:$false -ErrorAction SilentlyContinue
-
-					#Delete reg keys
-					Remove-Item -Path "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Enrollments\$Account" -Recurse -Force -ErrorAction SilentlyContinue
-					Remove-Item -Path "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Enrollments\Status\$Account" -Recurse -Force -ErrorAction SilentlyContinue
-					Remove-Item -Path "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\EnterpriseResourceManager\Tracked\$Account" -Recurse -Force -ErrorAction SilentlyContinue
-					Remove-Item -Path "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\AdmxInstalled\$Account" -Recurse -Force -ErrorAction SilentlyContinue
-					Remove-Item -Path "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\Providers\$Account" -Recurse -Force -ErrorAction SilentlyContinue
-					Remove-Item -Path "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Provisioning\OMADM\Accounts\$Account" -Recurse -Force -ErrorAction SilentlyContinue
-					Remove-Item -Path "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Provisioning\OMADM\Logger\$Account" -Recurse -Force -ErrorAction SilentlyContinue
-					Remove-Item -Path "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Provisioning\OMADM\Sessions\$Account" -Recurse -Force -ErrorAction SilentlyContinue
-					
-					#Delete Enrolment Certificates
-					$UserCerts = get-childitem cert:"CurrentUser" -Recurse
-					$IntuneCerts = $UserCerts | Where-Object {$_.Issuer -eq "CN=SC_Online_Issuing"}
-					foreach ($Cert in $IntuneCerts) {
-						$cert | Remove-Item -Force
-					}
-					$DeviceCerts = get-childitem cert:"LocalMachine" -Recurse
-					$IntuneCerts = $DeviceCerts | Where-Object {$_.Issuer -eq "CN=Microsoft Intune Root Certification Authority" -OR $_.Issuer -eq "CN=Microsoft Intune MDM Device CA"}
-					foreach ($Cert in $IntuneCerts) {
-						$cert | Remove-Item -Force -ErrorAction SilentlyContinue
+					if(!($EnrollmentUPN) -or $ProviderID -ne "MS DM Server") {
+						Insert-MigrationStatus "Deploying Application" "Enrollment is false for $Account with Provider ID $ProviderID" "Deploy-Application.ps1" "Info"
+						$Enrolled = $false					
 					}
 
-					#Delete Intune Company Portal App
-					Get-AppxPackage -AllUsers -Name "Microsoft.CompanyPortal" | Remove-AppxPackage -Confirm:$false
-					
-					Insert-MigrationStatus "Deploying Application" "Removed Intune enrollment" "Deploy-Application.ps1" "Info"
+					If($Enrolled){
+
+						#Delete Task Schedule tasks
+						Get-ScheduledTask -TaskPath "\Microsoft\Windows\EnterpriseMgmt\$Account\*" | Unregister-ScheduledTask -Confirm:$false -ErrorAction SilentlyContinue
+
+						#Delete reg keys
+						Remove-Item -Path "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Enrollments\$Account" -Recurse -Force -ErrorAction SilentlyContinue
+						Remove-Item -Path "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Enrollments\Status\$Account" -Recurse -Force -ErrorAction SilentlyContinue
+						Remove-Item -Path "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\EnterpriseResourceManager\Tracked\$Account" -Recurse -Force -ErrorAction SilentlyContinue
+						Remove-Item -Path "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\AdmxInstalled\$Account" -Recurse -Force -ErrorAction SilentlyContinue
+						Remove-Item -Path "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\Providers\$Account" -Recurse -Force -ErrorAction SilentlyContinue
+						Remove-Item -Path "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Provisioning\OMADM\Accounts\$Account" -Recurse -Force -ErrorAction SilentlyContinue
+						Remove-Item -Path "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Provisioning\OMADM\Logger\$Account" -Recurse -Force -ErrorAction SilentlyContinue
+						Remove-Item -Path "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Provisioning\OMADM\Sessions\$Account" -Recurse -Force -ErrorAction SilentlyContinue
+						
+						#Delete Enrolment Certificates
+						$UserCerts = get-childitem cert:"CurrentUser" -Recurse
+						$IntuneCerts = $UserCerts | Where-Object {$_.Issuer -eq "CN=SC_Online_Issuing"}
+						foreach ($Cert in $IntuneCerts) {
+							$cert | Remove-Item -Force
+						}
+						$DeviceCerts = get-childitem cert:"LocalMachine" -Recurse
+						$IntuneCerts = $DeviceCerts | Where-Object {$_.Issuer -eq "CN=Microsoft Intune Root Certification Authority" -OR $_.Issuer -eq "CN=Microsoft Intune MDM Device CA"}
+						foreach ($Cert in $IntuneCerts) {
+							$cert | Remove-Item -Force -ErrorAction SilentlyContinue
+						}
+
+						#Delete Intune Company Portal App
+						Get-AppxPackage -AllUsers -Name "Microsoft.CompanyPortal" | Remove-AppxPackage -Confirm:$false
+						
+						Insert-MigrationStatus "Deploying Application" "Removed Intune enrollment for $Account" "Deploy-Application.ps1" "Info"
+					}
 				}
 
 			}
@@ -454,7 +457,7 @@ Try {
 						}        
 				
 						Start-Sleep -Seconds 15
-						Insert-MigrationStatus "Deploying Application" "Removed computer from AD" "Deploy-Application.ps1" "Info"
+						Insert-MigrationStatus "Deploying Application" "Removed computer from AD using local credentials" "Deploy-Application.ps1" "Info"
 						
 						Write-Output "Computer removed from domain. Network adapters re-enabled. Restarting."
 						Disable-ScheduledTask -TaskName "AADM Launch PSADT for Interactive Migration" -TaskPath $TaskPath
@@ -472,7 +475,7 @@ Try {
 						Remove-Computer -ComputerName $PC -credential $creds -Verbose -Force -ErrorAction Stop
 						Disable-ScheduledTask -TaskName "AADM Launch PSADT for Interactive Migration" -TaskPath $TaskPath
 						Stop-Transcript
-						Insert-MigrationStatus "Deploying Application" "Removed computer from AD" "Deploy-Application.ps1" "Info"
+						Insert-MigrationStatus "Deploying Application" "Not connected to Domain. Removed computer from AD using local creds" "Deploy-Application.ps1" "Info"
 						Restart-Computer
 				
 					}
@@ -482,7 +485,7 @@ Try {
 					Write-Output "Computer is not a domain member, restarting computer."
 					Disable-ScheduledTask -TaskName "AADM Launch PSADT for Interactive Migration" -TaskPath $TaskPath
 					Stop-Transcript
-					Insert-MigrationStatus "Deploying Application" "Removed computer from AD" "Deploy-Application.ps1" "Info"
+					Insert-MigrationStatus "Deploying Application" "Computer is not a domain member" "Deploy-Application.ps1" "Info"
 					Restart-Computer
 				
 				}
