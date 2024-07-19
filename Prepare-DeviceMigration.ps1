@@ -155,8 +155,8 @@ Function Install-VCRuntime{
 
     If(!$VcRuntimeSetupVersion){
 
-    Invoke-WebRequest "https://aka.ms/vs/17/release/vc_redist.x64.exe" -OutFile "$MigrationPath\Files\VC_redist.x64.exe"  
-    $VcRuntimeSetupVersion = (Get-ChildItem -Path "$MigrationPath\Files\VC_redist.x64.exe").VersionInfo.FileVersion
+        Invoke-WebRequest "https://aka.ms/vs/17/release/vc_redist.x64.exe" -OutFile "$MigrationPath\Files\VC_redist.x64.exe"  
+        $VcRuntimeSetupVersion = (Get-ChildItem -Path "$MigrationPath\Files\VC_redist.x64.exe").VersionInfo.FileVersion
 
     }
         
@@ -177,9 +177,10 @@ Function Install-VCRuntime{
     }
     if (!$installed)
     {
-        #Install OneDrive setup
+        #Install VC runtime silently
         $Installer = "$MigrationPath\Files\VC_redist.x64.exe"
         $Arguments = "/q"
+        Insert-MigrationStatus "Preparing Device" "Installing VC runtime silently" "Prepare-DeviceMigration.ps1" "Error"
 
         Start-Process -FilePath $Installer -ArgumentList $Arguments
     }
