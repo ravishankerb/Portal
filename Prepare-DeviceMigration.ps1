@@ -13,8 +13,8 @@ $TenantID = $MigrationConfig.TenantID
 $OneDriveKFM = $MigrationConfig.UseOneDriveKFM
 $InstallOneDrive = $MigrationConfig.InstallOneDrive
 $StartBoundary = $MigrationConfig.StartBoundary
-$DeferInterval = $MigrationConfig.StartBoundary
-$MaxDefers = $MigrationConfig.MaxDefers
+$DeferInterval = 10
+$MaxDefers = 3
 
 function Set-RegistryValue {
 
@@ -319,7 +319,7 @@ function Prompt-OneDriveSignIn {
     $message = "Please sign in to OneDrive to ensure your files are synced."
     $buttons = [System.Windows.Forms.MessageBoxButtons]::OK
     $icon = [System.Windows.Forms.MessageBoxIcon]::Warning
-    
+   
     $result = [System.Windows.Forms.MessageBox]::Show($message, $caption, $buttons, $icon)        
     
 }
@@ -371,5 +371,5 @@ if ($deferCount -ge $MaxDefers) {
     Write-Host "Maximum deferrals reached. Restarting the computer now."
     Insert-MigrationStatus "Preparing Device" "Maximum deferrals reached. Restarting the computer now." "Prepare-DeviceMigration.ps1" "Info"
     #Disable-ScheduledTask -TaskName "Restart Prompt Task" -TaskPath $TaskPath
-    Restart-Computer -Force
+    #Restart-Computer -Force
 }
