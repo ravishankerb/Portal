@@ -137,6 +137,7 @@ function Set-ODKFMSettings{
     $Task = Register-ScheduledTask -Principal $principal -Action $Action -Trigger $Trigger -TaskName $TaskName -Description "Get current OneDrive Sync Status and write to event log" -TaskPath $TaskPath
     $Task.Triggers.repetition.Duration = "P1D"
     $Task.Triggers.repetition.Interval  = "PT30M"
+    $Task.Actions[0].WorkingDirectory = $ScriptPath
     $Task | Set-ScheduledTask
 
     Insert-MigrationStatus "Preparing Device" "Created task to get OneDrive status" "Prepare-DeviceMigration.ps1" "Info"
@@ -200,10 +201,16 @@ Function Install-OneDrive{
 
     $ODRegKey = "HKLM:\SOFTWARE\Microsoft\OneDrive"
 
-    $InstalledVer = Get-ItemPropertyValue -Path $ODRegKey -Name Version -ErrorAction SilentlyContinue
-    if (!($?))
+    try
     {
-        Insert-MigrationStatus "Preparing Device" ($Error[0].ToString() + $Error[0].Exception.StackTrace) "Prepare-DeviceMigration.ps1" "Error"
+        $InstalledVer = Get-ItemPropertyValue -Path $ODRegKey -Name Version -ErrorAction SilentlyContinue
+    }
+    catch
+    {
+        if (!($?))
+        {
+            Insert-MigrationStatus "Preparing Device" ($Error[0].ToString() + $Error[0].Exception.StackTrace) "Prepare-DeviceMigration.ps1" "Error"
+        }
     }
 
     If(!($InstalledVer) -or ([System.Version]$InstalledVer -lt [System.Version]$ODSetupVersion)){

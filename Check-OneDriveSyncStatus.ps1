@@ -38,7 +38,12 @@ else
 
 #Multiple OD4B accounts may be found. Consider adding logic to identify correct OD4B. Iterate through all accounts to check status and write to event log.
 ForEach($s in $Status){
-
+    $oneDriveUser = "$env:USERDOMAIN\$env:USERNAME"
+    $ServiceName = $s.ServiceName
+    if (-not $s.UserName -or $ServiceName -ne "Business1" -or $oneDriveUser -ne $s.UserName) {
+        continue                    
+    }
+    
     if ($Win11 = $true)
     {
         $StatusString = $s.CurrentStateString
