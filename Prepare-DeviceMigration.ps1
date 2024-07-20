@@ -277,43 +277,6 @@ function Prompt-Restart {
     return $result
 }
 
-$oneDriveSignedIn = $false
- 
-# Function to check OneDrive status
-function Get-OneDriveStatus {
-    $oneDriveProcess = Get-Process -Name OneDrive -ErrorAction SilentlyContinue
-    if ($oneDriveProcess) {
-        
-        $Status = C:\ProgramData\AADMigration\Scripts\Get-ODStatus.ps1 -ExePath $MigrationPath\Files
-        Set-ItemProperty -Path "HKCU:\Software\Microsoft\OneDrive" -Name "SilentAccountConfig" -Value 1
-        ForEach($s in $Status){
-            $StatusString = $s.CurrentStateString
-            $ServiceName = $s.ServiceName            
-            $oneDriveUser = $env:USERDOMAIN + '\' + $env:USERNAME
-          
-            if (!($s.UserName) -or (!($ServiceName = "Business1") -and ( $oneDriveUser = $s.UserName)))
-            {
-                continue
-            }          
-
-            If(!($StatusString)){       
-                Write-Output "OneDrive is not signed in."
-                Prompt-OneDriveSignIn
-                $oneDriveSignedIn = $false    
-              
-            } else {
-                Write-Output "OneDrive is signed in."
-                $oneDriveSignedIn =  $true
-            }
-        }
-        
-    } else {
-        Write-Output "OneDrive is not running."
-        Start-Process "C:\Program Files\Microsoft OneDrive\OneDrive.exe"
-        $oneDriveSignedIn = $false
-    }
-}
-
 # Function to prompt user to sign in to OneDrive
 function Prompt-OneDriveSignIn {
     Add-Type -AssemblyName "System.Windows.Forms"
@@ -345,12 +308,43 @@ If($InstallOneDrive){
 
 # Main script logic
 do {
-   
-    Get-OneDriveStatus
-    Start-Sleep -Seconds 7
-    Insert-MigrationStatus "Preparing Device" "oneDriveSignedIn returned $oneDriveSignedIn." "Prepare-DeviceMigration.ps1" "Info"
-    
+    $oneDriveProcess = Get-Process -Name OneDrive -ErrorAction SilentlyContinue
+    $oneDriveSignedIn = $true
+    if ($oneDriveProcess) {
+        
+        $Status = & "C:\ProgramData\AADMigration\Scripts\Get-ODStatus.ps1" -ExePath "$MigrationPath\Files"
+        Set-ItemProperty -Path "HKCU:\Software\Microsoft\OneDrive" -Name "SilentAccountConfig" -Value 1
+
+        foreach ($s in $Status) {
+            $StatusString = $s.CurrentStateString
+            $ServiceName = $s.ServiceName
+            $oneDriveUser = "$env:USERDOMAIN\$env:USERNAME"
+            $Status           
+            if (-not $s.UserName -or $ServiceName -ne "Business1" -or $oneDriveUser -ne $s.UserName) {
+                Write-Output "Ignoring event."                   
+            }
+            else
+            {
+                Write-Output "Considering event."
+                if (-not $StatusString) {
+                    Write-Output "OneDrive is not signed in."
+                    $oneDriveSignedIn = $false
+                    Prompt-OneDriveSignIn
+                    
+                } else {
+                    Write-Output "OneDrive is signed in."
+                    $oneDriveSignedIn = $true
+                }
+            }
+        }
+    } else {
+        Write-Output "OneDrive is not running."
+        Start-Process "C:\Program Files\Microsoft OneDrive\OneDrive.exe"
+        $oneDriveSignedIn = $false
+    }
+    Start-Sleep -Seconds 3
 } while ($oneDriveSignedIn -eq $false)
+
 
 $deferCount = 0
 
