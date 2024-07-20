@@ -321,7 +321,7 @@ Try {
 					$EnrollmentUPN = (Get-ItemProperty -Path $EnrollmentPath -ErrorAction SilentlyContinue).UPN
 					$ProviderID = (Get-ItemProperty -Path $EnrollmentPath -ErrorAction SilentlyContinue).ProviderID
 
-					if(!($EnrollmentUPN) -or $ProviderID -ne "MS DM Server") {
+					if($ProviderID -ne "MS DM Server" -and $ProviderID -ne "Microsoft Device Management") {
 						Insert-MigrationStatus "Deploying Application" "Enrollment is false for $Account with Provider ID $ProviderID" "Deploy-Application.ps1" "Info"
 						$Enrolled = $false					
 					}
@@ -330,6 +330,11 @@ Try {
 
 						#Delete Task Schedule tasks
 						Get-ScheduledTask -TaskPath "\Microsoft\Windows\EnterpriseMgmt\$Account\*" | Unregister-ScheduledTask -Confirm:$false -ErrorAction SilentlyContinue
+						$taskPath = "Microsoft\Windows\EnterpriseMgmt\$Account"
+                        $scheduler = new-object -com("Schedule.Service")
+                        $scheduler.Connect()
+                        $rootFolder = $scheduler.GetFolder("\")
+                        $rootFolder.DeleteFolder("$taskPath",$null)
 
 						#Delete reg keys
 						Remove-Item -Path "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Enrollments\$Account" -Recurse -Force -ErrorAction SilentlyContinue

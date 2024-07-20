@@ -172,7 +172,7 @@ if (Test-Path $FileName) {
 
 $FileName = "C:\ProgramData\AADMigration\Toolkit"
 if (Test-Path $FileName) {
-  #Remove-Item $FileName -Recurse -Force
+  Remove-Item $FileName -Recurse -Force
 }
 
 
