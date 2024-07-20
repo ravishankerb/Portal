@@ -287,9 +287,15 @@ function Get-OneDriveStatus {
         $Status = C:\ProgramData\AADMigration\Scripts\Get-ODStatus.ps1 -ExePath $MigrationPath\Files
         Set-ItemProperty -Path "HKCU:\Software\Microsoft\OneDrive" -Name "SilentAccountConfig" -Value 1
         ForEach($s in $Status){
-            $StatusString = $s.CurrentStatusString
-            $DisplayName = $s.DisplayName   
-            $s.UserName   
+            $StatusString = $s.CurrentStateString
+            $ServiceName = $s.ServiceName            
+            $oneDriveUser = $env:USERDOMAIN + '\' + $env:USERNAME
+          
+            if (!($s.UserName) -or (!($ServiceName = "Business1") -and ( $oneDriveUser = $s.UserName)))
+            {
+                continue
+            }          
+            
             If(!($StatusString)){       
                 Write-Output "OneDrive is not signed in."
                 Prompt-OneDriveSignIn
