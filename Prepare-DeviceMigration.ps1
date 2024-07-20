@@ -319,7 +319,7 @@ do {
             $StatusString = $s.CurrentStateString
             $ServiceName = $s.ServiceName
             $oneDriveUser = "$env:USERDOMAIN\$env:USERNAME"
-            $Status           
+                      
             if (-not $s.UserName -or $ServiceName -ne "Business1" -or $oneDriveUser -ne $s.UserName) {
                 Write-Output "Ignoring event."                   
             }
