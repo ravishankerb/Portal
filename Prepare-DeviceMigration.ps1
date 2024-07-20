@@ -4,8 +4,6 @@ Start-Transcript -Path C:\ProgramData\AADMigration\Logs\AD2AADJ-Prep.txt -Append
 #Expand AAD Migration zip file to ProgramData
 Expand-Archive "$PSScriptRoot\AADMigration.zip" -DestinationPath C:\ProgramData -Force
 . $MigrationPath\Scripts\LogMigrationStatus.ps1
-#. $MigrationPath\Scripts\RestartComputer.ps1
-#. $MigrationPath\Scripts\OneDriveSignInCheck.ps1
 
 $MigrationConfig = Import-LocalizedData -BaseDirectory "$MigrationPath\Scripts" -FileName "MigrationConfig.psd1"
 $MigrationPath = $MigrationConfig.MigrationPath
@@ -190,10 +188,7 @@ Function Install-OneDrive{
 
     #Check for OneDrive machine-wide installer, check version number if it exists
     If(Test-Path -Path "$MigrationPath\Files\OneDriveSetup.exe"){
-
-    
         $ODSetupVersion = (Get-ChildItem -Path "$MigrationPath\Files\OneDriveSetup.exe").VersionInfo.FileVersion
-
     }
 
     If(!$ODSetupVersion){
@@ -217,7 +212,12 @@ Function Install-OneDrive{
         $Installer = "$MigrationPath\Files\OneDriveSetup.exe"
         $Arguments = "/allusers"
 
-       Start-Process -FilePath $Installer -ArgumentList $Arguments
+        Start-Process -FilePath $Installer -ArgumentList $Arguments
+        while (!($InstalledVer) ){
+            Write-Output "Installing OneDrive"
+            Start-Sleep -Seconds 5  
+            $InstalledVer = Get-ItemPropertyValue -Path $ODRegKey -Name Version -ErrorAction SilentlyContinue    
+        } 
 
     } ElseIf($OneDriveKFM) {
 
@@ -278,36 +278,33 @@ function Prompt-Restart {
 }
 
 $oneDriveSignedIn = $false
-
  
 # Function to check OneDrive status
 function Get-OneDriveStatus {
     $oneDriveProcess = Get-Process -Name OneDrive -ErrorAction SilentlyContinue
     if ($oneDriveProcess) {
-        Write-Output "OneDrive is running."
         
-        $Status = C:\ProgramData\AADMigration\Scripts\Get-ODStatus.ps1 -ExePath C:\ProgramData\AADMigration\Files
+        $Status = C:\ProgramData\AADMigration\Scripts\Get-ODStatus.ps1 -ExePath $MigrationPath\Files
         Set-ItemProperty -Path "HKCU:\Software\Microsoft\OneDrive" -Name "SilentAccountConfig" -Value 1
         ForEach($s in $Status){
-            $StatusString = $s.StatusString
+            $StatusString = $s.CurrentStatusString
             $DisplayName = $s.DisplayName   
             $s.UserName   
-            If(!($StatusString)){           
-                #Disable-ScheduledTask -TaskName "OneDrive SignIn Check" -TaskPath $TaskPath
-                Write-Output "OneDrive is signed in."
-                return $true
-              
-            } else {
+            If(!($StatusString)){       
                 Write-Output "OneDrive is not signed in."
                 Prompt-OneDriveSignIn
-                #Create-ScheduledTask
-                return $false
+                $oneDriveSignedIn = $false    
+              
+            } else {
+                Write-Output "OneDrive is signed in."
+                $oneDriveSignedIn =  $true
             }
         }
         
     } else {
         Write-Output "OneDrive is not running."
         Start-Process "C:\Program Files\Microsoft OneDrive\OneDrive.exe"
+        $oneDriveSignedIn = $false
     }
 }
 
@@ -343,7 +340,7 @@ If($InstallOneDrive){
 # Main script logic
 do {
    
-    $oneDriveSignedIn = Get-OneDriveStatus
+    Get-OneDriveStatus
     Insert-MigrationStatus "Preparing Device" "oneDriveSignedIn returned $oneDriveSignedIn." "Prepare-DeviceMigration.ps1" "Info"
     
 } while ($oneDriveSignedIn -eq $false)
@@ -354,7 +351,6 @@ $deferCount = 0
 while ($deferCount -lt $MaxDefers) {
     $userChoice = Prompt-Restart
     if ($userChoice -eq [System.Windows.Forms.DialogResult]::Yes) {
-        #Disable-ScheduledTask -TaskName "Restart Prompt Task" -TaskPath $TaskPath
         Insert-MigrationStatus "Preparing Device" "User clicked Yes for restart." "Prepare-DeviceMigration.ps1" "Info"
         #Restart-Computer -Force
         break
@@ -362,9 +358,6 @@ while ($deferCount -lt $MaxDefers) {
         Write-Host "User chose to defer the restart. Will prompt again in $DeferInterval minutes."
         Insert-MigrationStatus "Preparing Device" "User chose to defer the restart. Will prompt again in $DeferInterval minutes." "Prepare-DeviceMigration.ps1" "Info"
         $deferCount++
-        if ($deferCount -eq 1) {
-            #Create-RestartScheduledTask
-        }
         Start-Sleep -Seconds ($DeferInterval * 60)
     }
 }
@@ -373,6 +366,5 @@ while ($deferCount -lt $MaxDefers) {
 if ($deferCount -ge $MaxDefers) {
     Write-Host "Maximum deferrals reached. Restarting the computer now."
     Insert-MigrationStatus "Preparing Device" "Maximum deferrals reached. Restarting the computer now." "Prepare-DeviceMigration.ps1" "Info"
-    #Disable-ScheduledTask -TaskName "Restart Prompt Task" -TaskPath $TaskPath
     #Restart-Computer -Force
 }
