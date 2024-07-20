@@ -295,7 +295,7 @@ function Get-OneDriveStatus {
             {
                 continue
             }          
-            
+
             If(!($StatusString)){       
                 Write-Output "OneDrive is not signed in."
                 Prompt-OneDriveSignIn
@@ -347,6 +347,7 @@ If($InstallOneDrive){
 do {
    
     Get-OneDriveStatus
+    Start-Sleep -Seconds 7
     Insert-MigrationStatus "Preparing Device" "oneDriveSignedIn returned $oneDriveSignedIn." "Prepare-DeviceMigration.ps1" "Info"
     
 } while ($oneDriveSignedIn -eq $false)
