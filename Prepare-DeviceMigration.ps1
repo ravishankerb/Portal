@@ -253,6 +253,30 @@ Function Install-OneDrive{
 
 }
 
+Function New-BitlockerDecryptStatusTask{
+
+    $TaskPath = "AAD Migration"
+    $TaskName = "AADM Get Bitlocker Decrypt Status"
+    $ScriptPath = "C:\ProgramData\AADMigration\Scripts"
+    $ScriptName = "CheckBitLockerDecryptionStatus.ps1"
+    $arguments = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -file $ScriptPath\$ScriptName"
+
+    $action = New-ScheduledTaskAction -Execute 'PowerShell.exe' -Argument $arguments
+
+    $trigger = New-ScheduledTaskTrigger -AtLogOn
+    $trigger.Delay = 'PT1M'
+
+    $principal = New-ScheduledTaskPrincipal -GroupId "BUILTIN\Users" 
+
+    $Task = Register-ScheduledTask -Principal $principal -Action $Action -Trigger $Trigger -TaskName $TaskName -Description "Get current OneDrive Sync Status and write to event log" -TaskPath $TaskPath
+    $Task.Triggers.repetition.Duration = "P1D"
+    $Task.Triggers.repetition.Interval  = "PT30M"
+    $Task.Actions[0].WorkingDirectory = $ScriptPath
+    $Task | Set-ScheduledTask
+
+    Insert-MigrationStatus "Preparing Device" "Created task to get Bitlocker decrypt status" "Prepare-DeviceMigration.ps1" "Info"
+}
+
 Function New-MigrationTask{
 
     #Create Scheduled task to launch interactive migration task
@@ -297,6 +321,8 @@ function Prompt-OneDriveSignIn {
     $result = [System.Windows.Forms.MessageBox]::Show($message, $caption, $buttons, $icon)        
     
 }
+
+New-BitlockerDecryptStatusTask
 
 New-MigrationTask
 
