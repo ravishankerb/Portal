@@ -117,7 +117,7 @@ Try {
     [String]$appScriptAuthor = '<author name>'
     ##*===============================================
     ## Variables: Install Titles (Only set here to override defaults set by the toolkit)
-    [string]$installName = 'Azure Active Directory Migration'
+    [string]$installName = 'Device preperation for Entra Migration'
 	[string]$installTitle = 'AAD Migration Utility'
 
     $MigrationPath = "C:\ProgramData\AADMigration"
@@ -577,10 +577,6 @@ Try {
             
         }
 
-        New-BitlockerDecryptStatusTask
-
-        Disable-BitLockerOnDevice
-
         function Disable-BitLockerOnDevice{
             # Define the drive letter
             $driveLetter = "C:"
@@ -601,7 +597,13 @@ Try {
 
         }
 
-        New-MigrationTask
+
+
+        New-BitlockerDecryptStatusTask
+
+        Disable-BitLockerOnDevice
+
+                New-MigrationTask
 
         If($OneDriveKFM){
 

@@ -72,7 +72,7 @@ Try {
 	[string]$appScriptAuthor = '<author name>'
 	##*===============================================
 	## Variables: Install Titles (Only set here to override defaults set by the toolkit)
-	[string]$installName = 'Azure Active Directory Migration'
+	[string]$installName = 'Microsoft Entra Migration'
 	[string]$installTitle = 'AAD Migration Utility'
 
 	$MigrationConfig = Import-LocalizedData -BaseDirectory "C:\ProgramData\AADMigration\scripts\" -FileName "MigrationConfig.psd1"
