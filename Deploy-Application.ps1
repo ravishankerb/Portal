@@ -300,14 +300,6 @@ Try {
 
 			}
 
-			function Set-Bitlocker {
-
-				#Check to see if disk is encrypted, if not skip this step
-				Suspend-BitLocker -MountPoint "C:" -RebootCount 3 -Verbose
-				Insert-MigrationStatus "Deploying Application" "Suspended Bitlocker" "Deploy-Application.ps1" "Info"
-			}
-
-
 			function Remove-IntuneMgmt {
 				
 				#Check to see if device is enrolled in Intune, if it is unenroll it by clearing registry keys, deleting scheduled task, and deleting enrollment certificates
@@ -541,8 +533,6 @@ Try {
 			Disable-OOBEPrivacy
 
 			Set-RunOnce
-
-			Set-Bitlocker
 
 			Remove-IntuneMgmt
 

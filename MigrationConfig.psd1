@@ -18,6 +18,8 @@
 	DomainLeaverUserKey = "DomainLeaveUser"
 	#Key for retrieving password
 	DomainLeaverPassKey = "DomainLeavePass"
+	#Key for PPKG file
+	AADPPKGPassKey = "AADPPKGPassKey"
 	
 	#Entra ID application for connecting to KeyVault
 	ClientId = "a711f96d-1219-48dc-b880-53a4371d4b0b"
