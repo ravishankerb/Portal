@@ -4,7 +4,7 @@
 	UseOneDriveKFM = $True
 	InstallOneDrive = $True
 	TenantID = "d94c29a2-bb01-401d-962a-64d615f12421"
-	DeferDeadline = "10/25/2023 18:00:00"
+	DeferDeadline = "10/25/2025 18:00:00"
 	DeferTimes = ""
 	StartBoundary = "2022-08-20T00:00:00"
 	
@@ -34,9 +34,4 @@
 	#Key for getting MasterKey for Cosmos DB from KeyVault
 	MasterKey = "CosmosMasterKey"
 
-	# Define the interval (in minutes) before re-prompting the user
-	$DeferInterval = 10
-	# Define the maximum number of deferrals
-	$MaxDefers = 3
-	
 }
