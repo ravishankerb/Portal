@@ -2,10 +2,10 @@
 $driveLetter = "C:"
 $eventLogName = "Application"
 $eventSource = "AAD_Migration_Script"
-$eventID_DecryptionComplete = 1000
-$eventID_DecryptionInProgress = 1001
-$eventID_NotEnabled = 1002
-$eventID_DriveLocked = 1003
+$eventID_DecryptionComplete = 1350
+$eventID_DecryptionInProgress = 1351
+$eventID_NotEnabled = 1352
+$eventID_DriveLocked = 1353
 
 # Function to write event to Event Viewer
 function Write-Event {
