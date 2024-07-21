@@ -148,35 +148,43 @@ Try {
 
 			#Check the most recent OD4B Sync status. Write error to event log if not healthy and exit
 			Try{
-
 				$Events = Get-EventLog -LogName Application -EntryType Information -Source 'AAD_Migration_Script'
 
 				$LastEvent = $Events[0].InstanceId
-				$LastEvent
 
 			} Catch {
-
 				Write-Output "No OneDrive Sync status found. Exiting migration utility; will retry on next logon."
 				Exit 3
-
 			}
 
 			If($LastEvent -eq 1337){
-
-
 				Write-Output "OneDrive Sync status is considered healthy, continuing."
-
-
 			} Else {
 
 				Write-Output "OneDrive sync status returned a value of $LastEvent. Migration will not launch at this time."
 				Exit 2
-
 			}
-
+			Insert-MigrationStatus "Deploying Application" "OneDrive is healthy. Proceeding with installation" "Deploy-Application.ps1" "Info"
 		}
-		Insert-MigrationStatus "Deploying Application" "OneDrive is healthy. Proceeding with installation" "Deploy-Application.ps1" "Info"
+		
+		Try{
+			$Events = Get-EventLog -LogName Application -EntryType Information -Source 'AAD_Migration_Script2'
 
+			$LastEvent = $Events[0].InstanceId
+
+		} Catch {
+			Write-Output "No Bitlocker decryption found. Exiting migration utility; will retry on next logon."
+			Exit 3
+		}
+
+		If($LastEvent -eq 1350){
+			Write-Output "Bitlocker decryption is complete, continuing."
+		} Else {
+
+			Write-Output "Bitlocker decryption  status returned a value of $LastEvent. Migration will not launch at this time."
+			Exit 2
+		}
+		Insert-MigrationStatus "Deploying Application" "Bitlocker decryption is complete. Proceeding with installation" "Deploy-Application.ps1" "Info"
 		## Show Welcome Message, close Internet Explorer if required, allow up to 3 deferrals, verify there is enough disk space to complete the install, and persist the prompt
 		Show-InstallationWelcome -AllowDefer -DeferDeadline $DeferDeadline -PersistPrompt -ForceCountdown 600
 
