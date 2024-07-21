@@ -347,12 +347,14 @@ Try {
             $sourceExists = $false
             try
             {
-                $sourceExists = [System.Diagnostics.EventLog]::SourceExists($SourceName)
-                $sourceExists = $rue
+                $sourceExists = [System.Diagnostics.EventLog]::SourceExists("AAD_Migration_Script")
+                
             }
             catch
             {
+                $sourceExists = $false
             }
+
             if ($sourceExists = $false)
             {
                 New-EventLog -LogName 'Application' -Source 'AAD_Migration_Script' -ErrorAction Stop        
@@ -493,6 +495,21 @@ Try {
 
         Function New-BitlockerDecryptStatusTask{
 
+            $sourceExists = $false
+            try
+            {
+                $sourceExists = [System.Diagnostics.EventLog]::SourceExists("AAD_Migration_Script2")
+            }
+            catch
+            {
+                $sourceExists = $false
+            }
+
+            if ($sourceExists = $false)
+            {
+                New-EventLog -LogName 'Application' -Source 'AAD_Migration_Script2' -ErrorAction Stop        
+            }
+
             $TaskPath = "AAD Migration"
             $TaskName = "AADM Get Bitlocker Decrypt Status"
             $ScriptPath = "C:\ProgramData\AADMigration\Scripts"
@@ -562,6 +579,28 @@ Try {
 
         New-BitlockerDecryptStatusTask
 
+        Disable-BitLockerOnDevice
+
+        function Disable-BitLockerOnDevice{
+            # Define the drive letter
+            $driveLetter = "C:"
+
+            # Check if BitLocker is enabled on the drive
+            $bitlockerStatus = Get-BitLockerVolume -MountPoint $driveLetter
+
+            if ($bitlockerStatus.ProtectionStatus -eq "On") {
+                Write-Output "BitLocker is enabled on drive $driveLetter. Disabling BitLocker..."
+
+                # Disable BitLocker and start the decryption process in the background
+                Disable-BitLocker -MountPoint $driveLetter
+                
+                Write-Output "BitLocker decryption has been initiated on drive $driveLetter. It will continue to run in the background."
+            } else {
+                Write-Output "BitLocker is not enabled on drive $driveLetter."
+            }
+
+        }
+
         New-MigrationTask
 
         If($OneDriveKFM){
@@ -617,7 +656,20 @@ Try {
         } while ($oneDriveSignedIn -eq $false)
 
 
-       
+        $TaskPath = "\AAD Migration\"
+        $TaskName = "AADM Launch Device Migration"
+        # Check if the scheduled task exists
+        $taskExists = $false
+        try {
+            $task = Get-ScheduledTask -TaskName $taskName -TaskPath $taskPath -ErrorAction Stop
+            $taskExists = $true
+        } catch {
+        }
+
+        # Delete the scheduled task if it exists
+        if ($taskExists) {
+            Unregister-ScheduledTask -TaskName $TaskName -TaskPath $TaskPath -Confirm:$false
+        }
 
         ##*===============================================
         ##* POST-INSTALLATION
@@ -660,20 +712,7 @@ Try {
         }
 
         ## <Perform Uninstallation tasks here>
-        $TaskPath = "\AAD Migration\"
-        $TaskName = "AADM Launch Device Migration"
-        # Check if the scheduled task exists
-        $taskExists = $false
-        try {
-            $task = Get-ScheduledTask -TaskName $taskName -TaskPath $taskPath -ErrorAction Stop
-            $taskExists = $true
-        } catch {
-        }
-
-        # Delete the scheduled task if it exists
-        if ($taskExists) {
-            Unregister-ScheduledTask -TaskName $TaskName -TaskPath $TaskPath -Confirm:$false
-        }
+        
 
 
         ##*===============================================
