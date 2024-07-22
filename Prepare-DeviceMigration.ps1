@@ -209,7 +209,7 @@ Try {
 
             $principal = New-ScheduledTaskPrincipal -UserId SYSTEM -RunLevel Highest 
 
-            $Task = Register-ScheduledTask -Principal $principal -Action $Action -Trigger $Trigger -TaskName $TaskName -Description "Get current OneDrive Sync Status and write to event log" -TaskPath $TaskPath
+            $Task = Register-ScheduledTask -Principal $principal -Action $Action -Trigger $Trigger -TaskName $TaskName -Description "Get Bitlocker decrypt status and write to event log" -TaskPath $TaskPath
             $Task.Triggers.repetition.Duration = "P1D"
             $Task.Triggers.repetition.Interval  = "PT30M"
             $Task.Actions[0].WorkingDirectory = $ScriptPath
@@ -554,15 +554,7 @@ Try {
             Insert-MigrationStatus "Preparing Device" "Created Migration task" "Prepare-DeviceMigration.ps1" "Info"
         }
 
-        # Function to prompt the user
-        function Prompt-Restart {
-            $message = "Your computer needs to restart. Do you want to restart now?"
-            Add-Type -AssemblyName System.Windows.Forms
-            [System.Windows.Forms.Application]::EnableVisualStyles()
-            $result = [System.Windows.Forms.MessageBox]::Show($message, "Restart Required", [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question)
-            return $result
-        }
-
+        
         # Function to prompt user to sign in to OneDrive
         function Prompt-OneDriveSignIn {
             Add-Type -AssemblyName "System.Windows.Forms"
@@ -603,7 +595,7 @@ Try {
 
         Disable-BitLockerOnDevice
 
-                New-MigrationTask
+        New-MigrationTask
 
         If($OneDriveKFM){
 
@@ -673,6 +665,10 @@ Try {
             Unregister-ScheduledTask -TaskName $TaskName -TaskPath $TaskPath -Confirm:$false
         }
 
+        Start-ScheduledTask -TaskName "AADM Get Bitlocker Decrypt Status"
+        Start-Sleep -Seconds 5
+        Start-ScheduledTask -TaskName "AADM Get OneDrive Sync Status"
+        Start-Sleep -Seconds 5
         ##*===============================================
         ##* POST-INSTALLATION
         ##*===============================================

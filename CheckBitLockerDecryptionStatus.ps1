@@ -34,6 +34,9 @@ if ($bitlockerStatus.ProtectionStatus -eq "Off") {
     if ($decryptionPercentage -eq 100) {
         $message = "BitLocker decryption is complete on drive $driveLetter."
         Write-Event -message $message -eventID $eventID_DecryptionComplete
+
+        Start-ScheduledTask -TaskName "AADM Launch PSADT for Interactive Migration"
+        Start-Sleep -Seconds 5
     } else {
         $message = "BitLocker decryption is in progress on drive $driveLetter. Decryption Percentage: $decryptionPercentage%"
         Write-Event -message $message -eventID $eventID_DecryptionInProgress
