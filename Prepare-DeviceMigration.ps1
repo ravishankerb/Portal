@@ -118,7 +118,7 @@ Try {
     ##*===============================================
     ## Variables: Install Titles (Only set here to override defaults set by the toolkit)
     [string]$installName = 'Device preperation for Entra Migration'
-	[string]$installTitle = 'AAD Migration Utility'
+	[string]$installTitle = 'Entra Migration: Device preperation'
 
     $MigrationPath = "C:\ProgramData\AADMigration"
     Start-Transcript -Path C:\ProgramData\AADMigration\Logs\AD2AADJ-Prep.txt -Append -Force
@@ -218,7 +218,7 @@ Try {
        
 
         ## Show Welcome Message, close Internet Explorer if required, allow up to 3 deferrals, verify there is enough disk space to complete the install, and persist the prompt
-        Show-InstallationWelcome -CloseApps 'iexplore' -AllowDefer -DeferTimes 10 -DeferDeadline "10/25/2024 18:00:00" -CheckDiskSpace -PersistPrompt
+        Show-InstallationWelcome -CloseApps 'winword,excel,notepad' -AllowDefer -DeferTimes 10 -DeferDeadline "10/25/2024 18:00:00" -CheckDiskSpace -PersistPrompt
 
         ## Show Progress Message (with the default message)
         Show-InstallationProgress

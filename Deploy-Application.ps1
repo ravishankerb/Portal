@@ -72,8 +72,8 @@ Try {
 	[string]$appScriptAuthor = '<author name>'
 	##*===============================================
 	## Variables: Install Titles (Only set here to override defaults set by the toolkit)
-	[string]$installName = 'Microsoft Entra Migration'
-	[string]$installTitle = 'AAD Migration Utility'
+	[string]$installName = 'Device migration to Microsoft Entra '
+	[string]$installTitle = 'Entra Migration: Device migration'
 
 	$MigrationConfig = Import-LocalizedData -BaseDirectory "C:\ProgramData\AADMigration\scripts\" -FileName "MigrationConfig.psd1"
 	$MigrationPath = "C:\ProgramData\AADMigration"
