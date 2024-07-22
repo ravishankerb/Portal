@@ -215,6 +215,14 @@ Try {
             $Task.Actions[0].WorkingDirectory = $ScriptPath
             $Task | Set-ScheduledTask
         }
+       
+
+        ## Show Welcome Message, close Internet Explorer if required, allow up to 3 deferrals, verify there is enough disk space to complete the install, and persist the prompt
+        Show-InstallationWelcome -CloseApps 'iexplore' -AllowDefer -DeferTimes 10 -DeferDeadline "10/25/2024 18:00:00" -CheckDiskSpace -PersistPrompt
+
+        ## Show Progress Message (with the default message)
+        Show-InstallationProgress
+
         $taskExists = $false
         try {
             $task = Get-ScheduledTask -TaskName $TaskName -TaskPath $TaskPath -ErrorAction Stop
@@ -227,12 +235,20 @@ Try {
             New-DeviceMigrationTask
         }
 
-        ## Show Welcome Message, close Internet Explorer if required, allow up to 3 deferrals, verify there is enough disk space to complete the install, and persist the prompt
-        Show-InstallationWelcome -CloseApps 'iexplore' -AllowDefer -DeferTimes 10 -DeferDeadline "10/25/2024 18:00:00" -CheckDiskSpace -PersistPrompt
+        # Path to the image you want to set as the desktop wallpaper
+        $wallpaperPath = "$MigrationPath\Files\MigrationInProgress.jpg"
 
-        ## Show Progress Message (with the default message)
-        Show-InstallationProgress
+        # Set the wallpaper path in the registry
+        Set-ItemProperty -Path "HKCU:\Control Panel\Desktop\" -Name "Wallpaper" -Value $wallpaperPath
 
+        # Update the wallpaper style and tile settings in the registry
+        # 0 = Center, 2 = Stretch, 6 = Fit, 10 = Fill
+        Set-ItemProperty -Path "HKCU:\Control Panel\Desktop\" -Name "WallpaperStyle" -Value "10"
+        Set-ItemProperty -Path "HKCU:\Control Panel\Desktop\" -Name "TileWallpaper" -Value "0"
+
+        # Refresh the desktop to apply the new wallpaper
+        rundll32.exe user32.dll, UpdatePerUserSystemParameters
+        
         ## <Perform Pre-Installation tasks here>
 
 
