@@ -360,17 +360,7 @@ Try {
             Set-RegistryValue $RegKeyPath $RegValName $RegValType $RegValData
 
             #Create EventLog Source
-            $sourceExists = $false
-            try
-            {
-                $sourceExists = [System.Diagnostics.EventLog]::SourceExists("AAD_Migration_Script")
-            }
-            catch
-            {
-                $sourceExists = $false
-            }
-
-            if ($sourceExists = $false)
+            if (-not [System.Diagnostics.EventLog]::SourceExists("AAD_Migration_Script"))
             {
                 New-EventLog -LogName 'Application' -Source 'AAD_Migration_Script' -ErrorAction Stop        
             }
@@ -521,17 +511,7 @@ Try {
 
         Function New-BitlockerDecryptStatusTask{
 
-            $sourceExists = $false
-            try
-            {
-                $sourceExists = [System.Diagnostics.EventLog]::SourceExists("AAD_Migration_Script2")
-            }
-            catch
-            {
-                $sourceExists = $false
-            }
-
-            if ($sourceExists = $false)
+            if (-not [System.Diagnostics.EventLog]::SourceExists("AAD_Migration_Script2"))
             {
                 New-EventLog -LogName 'Application' -Source 'AAD_Migration_Script2' -ErrorAction Stop        
             }
