@@ -73,7 +73,7 @@ ForEach($s in $Status){
         
         Insert-MigrationStatus "Checking OneDrive Status" $details "Check-OneDriveSyncStatus.ps1" "Info"
 
-        Start-ScheduledTask -TaskName "AADM Launch PSADT for Interactive Migration"
+        Start-ScheduledTask -TaskName "AADM Launch PSADT for Interactive Migration" -TaskPath '\AAD Migration\'
         Start-Sleep -Seconds 5
 
 

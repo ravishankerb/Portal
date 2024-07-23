@@ -1,3 +1,6 @@
+$MigrationPath = "C:\ProgramData\AADMigration"
+. $MigrationPath\Scripts\LogMigrationStatus.ps1
+
 # Define the drive letter and event log parameters
 $driveLetter = "C:"
 $eventLogName = "Application"
@@ -25,7 +28,10 @@ $bitlockerStatus = Get-BitLockerVolume -MountPoint $driveLetter
 
 if ($bitlockerStatus.ProtectionStatus -eq "Off") {
     $message = "BitLocker is not enabled on drive $driveLetter."
-    Write-Event -message $message -eventID $eventID_NotEnabled
+    Write-Event -message $message -eventID $eventID_DecryptionComplete
+
+    Start-ScheduledTask -TaskName "AADM Launch PSADT for Interactive Migration" -TaskPath '\AAD Migration\'
+    Start-Sleep -Seconds 5
 } elseif ($bitlockerStatus.LockStatus -eq "Locked") {
     $message = "Drive $driveLetter is locked. Cannot check decryption status."
     Write-Event -message $message -eventID $eventID_DriveLocked
@@ -35,7 +41,7 @@ if ($bitlockerStatus.ProtectionStatus -eq "Off") {
         $message = "BitLocker decryption is complete on drive $driveLetter."
         Write-Event -message $message -eventID $eventID_DecryptionComplete
 
-        Start-ScheduledTask -TaskName "AADM Launch PSADT for Interactive Migration"
+        Start-ScheduledTask -TaskName "AADM Launch PSADT for Interactive Migration" -TaskPath '\AAD Migration\'
         Start-Sleep -Seconds 5
     } else {
         $message = "BitLocker decryption is in progress on drive $driveLetter. Decryption Percentage: $decryptionPercentage%"

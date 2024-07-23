@@ -556,7 +556,7 @@ Try {
 
             $principal = New-ScheduledTaskPrincipal -GroupId "BUILTIN\Users" 
 
-            $Task = Register-ScheduledTask -Principal $principal -Action $Action -Trigger $Trigger -TaskName $TaskName -Description "Get current OneDrive Sync Status and write to event log" -TaskPath $TaskPath
+            $Task = Register-ScheduledTask -Principal $principal -Action $Action -Trigger $Trigger -TaskName $TaskName -Description "Get Bitlocker decryption status Status and write to event log" -TaskPath $TaskPath
             $Task.Triggers.repetition.Duration = "P1D"
             $Task.Triggers.repetition.Interval  = "PT30M"
             $Task.Actions[0].WorkingDirectory = $ScriptPath

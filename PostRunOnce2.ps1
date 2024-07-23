@@ -143,6 +143,30 @@ $RegValData = "This PC has been migrated to Azure Active Directory. Please log i
 
 Set-RegistryValue $RegKeyPath $RegValName $RegValType $RegValData
 
+SetPrimaryUser{
+
+    $UserPrincipalName = $TopUser.Name
+
+    #Get AAD Id of primary user to assign
+    Write-Output "Getting User ID"
+    $URI= "https://graph.microsoft.com/beta/users/$UserPrincipalName"
+    $Method = "GET"
+
+    $MSGraphCall = Invoke-MsGraphCall -AccessToken $Token -URI $URI -Method $Method -Body $Body
+    $UserID = $MSGraphCall.id
+
+    #Update Primary User on Managed Device
+    #Create required variables
+    Write-Output "Updating primary user on Intune Device ID $ManagedDeviceID. New Primary User is $UserPrincipalName, ID: $UserID"
+    $Body = @{ "@odata.id" = "https://graph.microsoft.com/beta/users/$UserId" } | ConvertTo-Json
+    $URI = "https://graph.microsoft.com/beta/deviceManagement/managedDevices('$ManagedDeviceID')/users/`$ref"
+    $Method = "POST"
+
+    #Call Invoke-MsGraphCall
+    $MSGraphCall = Invoke-MsGraphCall -AccessToken $Token -URI $URI -Method $Method -Body $Body
+    
+}
+
 Insert-MigrationStatus "Post Migration" "Device Migrated to Entra" "PostRunOnce2.ps1" "Info"
 
 #Remove scheduled tasks. If we don't remove them now, the user may be prompted to restart the migration on the next logon.
