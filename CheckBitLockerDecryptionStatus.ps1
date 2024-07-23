@@ -4,7 +4,7 @@ $MigrationPath = "C:\ProgramData\AADMigration"
 # Define the drive letter and event log parameters
 $driveLetter = "C:"
 $eventLogName = "Application"
-$eventSource = "AAD_Migration_Script"
+$eventSource = "AAD_Migration_Script2"
 $eventID_DecryptionComplete = 1350
 $eventID_DecryptionInProgress = 1351
 $eventID_NotEnabled = 1352

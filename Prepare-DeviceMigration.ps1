@@ -483,7 +483,13 @@ Try {
                 while (!($InstalledVer) ){
                     Write-Output "Installing OneDrive"
                     Start-Sleep -Seconds 5  
-                    $InstalledVer = Get-ItemPropertyValue -Path $ODRegKey -Name Version -ErrorAction SilentlyContinue    
+                    try
+                    {
+                        $InstalledVer = Get-ItemPropertyValue -Path $ODRegKey -Name Version -ErrorAction SilentlyContinue
+                    }
+                    catch
+                    {
+                    }
                 } 
 
             } ElseIf($OneDriveKFM) {
@@ -703,9 +709,9 @@ Try {
             Unregister-ScheduledTask -TaskName $TaskName -TaskPath $TaskPath -Confirm:$false
         }
 
-        Start-ScheduledTask -TaskName "AADM Get Bitlocker Decrypt Status"
+        Start-ScheduledTask -TaskName "AADM Get Bitlocker Decrypt Status" -TaskPath $taskPath
         Start-Sleep -Seconds 5
-        Start-ScheduledTask -TaskName "AADM Get OneDrive Sync Status"
+        Start-ScheduledTask -TaskName "AADM Get OneDrive Sync Status" -TaskPath $taskPath
         Start-Sleep -Seconds 5
         ##*===============================================
         ##* POST-INSTALLATION
