@@ -84,11 +84,17 @@ $RunOnceKey = "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunOnce"
 
 set-itemproperty $RunOnceKey "NextRun" ('C:\Windows\System32\WindowsPowerShell\v1.0\Powershell.exe -executionPolicy Unrestricted -File ' + "C:\ProgramData\AADMigration\Scripts\PostRunOnce2.ps1")
 
-[String]$AADPkgPass = Get-KeyVaultSecret $PPKGKey
-$password = $AADPkgPass | ConvertTo-SecureString -asPlainText -Force	
+if (-not $PPKGKey){
+    [String]$AADPkgPass = Get-KeyVaultSecret $PPKGKey
+    $password = $AADPkgPass | ConvertTo-SecureString -asPlainText -Force	
 
-# Install Provisioning PPKG
-Install-ProvisioningPackage -PackagePath "$MigrationPath\Files\$PPKGName" -ForceInstall -QuietInstall -PackagePassword $password
+    # Install Provisioning PPKG
+    Install-ProvisioningPackage -PackagePath "$MigrationPath\Files\$PPKGName" -ForceInstall -QuietInstall -PackagePassword $password
+}
+else{
+    Install-ProvisioningPackage -PackagePath "$MigrationPath\Files\$PPKGName" -ForceInstall -QuietInstall
+
+}
 
 Insert-MigrationStatus "Post installation" "Installed provisioning package" "PostRunOnce.ps1" "Info"
 

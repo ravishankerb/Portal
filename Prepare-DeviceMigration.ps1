@@ -364,7 +364,6 @@ Try {
             try
             {
                 $sourceExists = [System.Diagnostics.EventLog]::SourceExists("AAD_Migration_Script")
-                
             }
             catch
             {
@@ -377,8 +376,13 @@ Try {
             }
 
             #Create scheduled task to check OneDrive sync status
-            $TaskPath = "AAD Migration"
+            $TaskPath = "\AAD Migration\"
             $TaskName = "AADM Get OneDrive Sync Status"
+            $task = Get-ScheduledTask -TaskName $TaskName -TaskPath $TaskPath -ErrorAction SilentlyContinue
+            if ($task)
+            {
+                return
+            }
             $ScriptPath = "C:\ProgramData\AADMigration\Scripts"
             $ScriptName = "Check-OneDriveSyncStatus.ps1"
             $arguments = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -file $ScriptPath\$ScriptName"
@@ -526,8 +530,21 @@ Try {
                 New-EventLog -LogName 'Application' -Source 'AAD_Migration_Script2' -ErrorAction Stop        
             }
 
-            $TaskPath = "AAD Migration"
+            try {
+                $task = Get-ScheduledTask -TaskName $TaskName -TaskPath $TaskPath -ErrorAction Stop
+                $taskExists = $true
+                
+            } catch {
+                
+            }
+
+            $TaskPath = "\AAD Migration\"
             $TaskName = "AADM Get Bitlocker Decrypt Status"
+            $task = Get-ScheduledTask -TaskName $TaskName -TaskPath $TaskPath -ErrorAction SilentlyContinue
+            if ($task)
+            {
+                return
+            }
             $ScriptPath = "C:\ProgramData\AADMigration\Scripts"
             $ScriptName = "CheckBitLockerDecryptionStatus.ps1"
             $arguments = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -file $ScriptPath\$ScriptName"
@@ -551,8 +568,13 @@ Try {
         Function New-MigrationTask{
 
             #Create Scheduled task to launch interactive migration task
-            $TaskPath = "AAD Migration"
+            $TaskPath = "\AAD Migration\"
             $TaskName = "AADM Launch PSADT for Interactive Migration"
+            $task = Get-ScheduledTask -TaskName $TaskName -TaskPath $TaskPath -ErrorAction SilentlyContinue
+            if ($task)
+            {
+                return
+            }
             $ScriptPath = "C:\ProgramData\AADMigration\Scripts"
             $ScriptName = "Launch-DeployApplication_SchTask.ps1"
             $arguments = "-executionpolicy Bypass -file $ScriptPath\$ScriptName"
