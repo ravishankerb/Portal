@@ -515,14 +515,6 @@ Try {
                 New-EventLog -LogName 'Application' -Source 'AAD_Migration_Script2' -ErrorAction Stop        
             }
 
-            try {
-                $task = Get-ScheduledTask -TaskName $TaskName -TaskPath $TaskPath -ErrorAction Stop
-                $taskExists = $true
-                
-            } catch {
-                
-            }
-
             $TaskPath = "\AAD Migration\"
             $TaskName = "AADM Get Bitlocker Decrypt Status"
             $task = Get-ScheduledTask -TaskName $TaskName -TaskPath $TaskPath -ErrorAction SilentlyContinue
