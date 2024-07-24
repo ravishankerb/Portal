@@ -1,6 +1,11 @@
 Start-Transcript -Path C:\ProgramData\AADMigration\Logs\AD2AADJ-R2.txt -Append -Verbose
 $MigrationPath = "C:\ProgramData\AADMigration"
 . $MigrationPath\Scripts\LogMigrationStatus.ps1
+
+$clientId = $MigrationConfig.ClientId
+$clientSecret = $MigrationConfig.ClientSecret
+$tenantID = $MigrationConfig.TenantID
+
 #Block user input, load user32.dll and set block input to true
 $code = @"
     [DllImport("user32.dll")]
@@ -143,29 +148,67 @@ $RegValData = "This PC has been migrated to Azure Active Directory. Please log i
 
 Set-RegistryValue $RegKeyPath $RegValName $RegValType $RegValData
 
-SetPrimaryUser{
+# Get an access token
+function Get-AccessToken {
+    $body = @{
+        client_id     = $clientId
+        scope         = "https://graph.microsoft.com/.default"
+        client_secret = $clientSecret
+        grant_type    = "client_credentials"
+    }
 
-    $UserPrincipalName = $TopUser.Name
-
-    #Get AAD Id of primary user to assign
-    Write-Output "Getting User ID"
-    $URI= "https://graph.microsoft.com/beta/users/$UserPrincipalName"
-    $Method = "GET"
-
-    $MSGraphCall = Invoke-MsGraphCall -AccessToken $Token -URI $URI -Method $Method -Body $Body
-    $UserID = $MSGraphCall.id
-
-    #Update Primary User on Managed Device
-    #Create required variables
-    Write-Output "Updating primary user on Intune Device ID $ManagedDeviceID. New Primary User is $UserPrincipalName, ID: $UserID"
-    $Body = @{ "@odata.id" = "https://graph.microsoft.com/beta/users/$UserId" } | ConvertTo-Json
-    $URI = "https://graph.microsoft.com/beta/deviceManagement/managedDevices('$ManagedDeviceID')/users/`$ref"
-    $Method = "POST"
-
-    #Call Invoke-MsGraphCall
-    $MSGraphCall = Invoke-MsGraphCall -AccessToken $Token -URI $URI -Method $Method -Body $Body
-    
+    $response = Invoke-RestMethod -Uri "https://login.microsoftonline.com/$tenantId/oauth2/v2.0/token" -Method Post -ContentType "application/x-www-form-urlencoded" -Body $body
+    return $response.access_token
 }
+
+$accessToken = Get-AccessToken
+
+# Set primary user
+function Set-PrimaryUser {
+    param (
+        [string]$deviceId,
+        [string]$newPrimaryUser
+    )
+
+    $uri = "https://graph.microsoft.com/v1.0/deviceManagement/managedDevices/$deviceId/assignUser"
+    $body = @{
+        userPrincipalName = $newPrimaryUser
+    } | ConvertTo-Json
+
+    $headers = @{
+        Authorization = "Bearer $accessToken"
+        ContentType   = "application/json"
+    }
+
+    Invoke-RestMethod -Uri $uri -Method Post -Headers $headers -Body $body
+}
+
+# Get list of managed devices
+function Get-ManagedDevices {
+    $uri = "https://graph.microsoft.com/v1.0/deviceManagement/managedDevices"
+    
+    $headers = @{
+        Authorization = "Bearer $accessToken"
+    }
+
+    $response = Invoke-RestMethod -Uri $uri -Method Get -Headers $headers
+    return $response.value
+}
+
+$managedDevices = Get-ManagedDevices
+
+# Find the device ID for the current device
+$currentDevice = $managedDevices | Where-Object { $_.deviceName -eq $env:COMPUTERNAME }
+
+if ($currentDevice) {
+    Write-Output "Current Device Name: $($currentDevice.deviceName), Device ID: $($currentDevice.id)"
+    
+    Insert-MigrationStatus "Post Migration" "Changing primary user for $currentDevice.id" "PostRunOnce2.ps1" "Info"
+} else {
+    Write-Output "Current device ($currentDeviceName) not found in managed devices."
+}
+# Execute the function
+Set-PrimaryUser -deviceId $currentDevice.id -newPrimaryUser "$env:USERNAME@m365x47992235.onmicrosoft.com"
 
 Insert-MigrationStatus "Post Migration" "Device Migrated to Entra" "PostRunOnce2.ps1" "Info"
 
