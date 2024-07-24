@@ -285,7 +285,6 @@ Try {
 
             #Test to see if Edge key exists, if it does not exist create it
             $RegKeyPathExists = Test-Path $RegKeyPath
-            Write-Host "$RegKeyPath Exists"
             if (!$RegKeyPathExists) {
                 New-Item -Path $RegKeyPath -Force | Out-Null
             }
@@ -690,9 +689,7 @@ Try {
         }
 
         Start-ScheduledTask -TaskName "AADM Get Bitlocker Decrypt Status" -TaskPath $taskPath
-        Start-Sleep -Seconds 5
         Start-ScheduledTask -TaskName "AADM Get OneDrive Sync Status" -TaskPath $taskPath
-        Start-Sleep -Seconds 5
         ##*===============================================
         ##* POST-INSTALLATION
         ##*===============================================

@@ -31,7 +31,6 @@ if ($bitlockerStatus.ProtectionStatus -eq "Off") {
     Write-Event -message $message -eventID $eventID_DecryptionComplete
 
     Start-ScheduledTask -TaskName "AADM Launch PSADT for Interactive Migration" -TaskPath '\AAD Migration\'
-    Start-Sleep -Seconds 5
 } elseif ($bitlockerStatus.LockStatus -eq "Locked") {
     $message = "Drive $driveLetter is locked. Cannot check decryption status."
     Write-Event -message $message -eventID $eventID_DriveLocked
@@ -42,7 +41,6 @@ if ($bitlockerStatus.ProtectionStatus -eq "Off") {
         Write-Event -message $message -eventID $eventID_DecryptionComplete
 
         Start-ScheduledTask -TaskName "AADM Launch PSADT for Interactive Migration" -TaskPath '\AAD Migration\'
-        Start-Sleep -Seconds 5
     } else {
         $message = "BitLocker decryption is in progress on drive $driveLetter. Decryption Percentage: $decryptionPercentage%"
         Write-Event -message $message -eventID $eventID_DecryptionInProgress
