@@ -679,12 +679,16 @@ Try {
 
         do{
             $launchedMigration = $false
-            $Events1 = Get-EventLog -LogName Application -EntryType Information -Source 'AAD_Migration_Script2'
-            $Events2 = Get-EventLog -LogName Application -EntryType Information -Source 'AAD_Migration_Script'
-            $LastEvent1 = $Events1[0].InstanceId
-            $LastEvent2 = $Events2[0].InstanceId
+            $Events2 = Get-EventLog -LogName Application -EntryType Information -Source 'AAD_Migration_Script2'
+            $Events1 = Get-EventLog -LogName Application -EntryType Information -Source 'AAD_Migration_Script'
+            if ($Events2.Count -gt 0){
+                $LastEvent2 = $Events2[0].InstanceId
+            }
+            if ($Events1.Count -gt 0){
+                $LastEvent1 = $Events1[0].InstanceId
+            }
             
-            If(($LastEvent1 -eq 1350) -and ($LastEvent2 -eq 1337)){
+            If(($LastEvent2 -eq 1350) -and ($LastEvent1 -eq 1337)){
                 Start-ScheduledTask -TaskName "AADM Launch PSADT for Interactive Migration" -TaskPath '\AAD Migration\'
                 $launchedMigration = $true
                 Insert-MigrationStatus "Preparing Device" "Launched interactive migration" "Prepare-DeviceMigration.ps1" "Info"
