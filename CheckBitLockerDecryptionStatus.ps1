@@ -2,7 +2,6 @@ $MigrationPath = "C:\ProgramData\AADMigration"
 . $MigrationPath\Scripts\LogMigrationStatus.ps1
 
 # Define the drive letter and event log parameters
-$driveLetter = "C:"
 $eventLogName = "Application"
 $eventSource = "AAD_Migration_Script2"
 $eventID_DecryptionComplete = 1350
@@ -24,7 +23,7 @@ function Write-Event {
 }
 
 # Check if BitLocker is enabled on the drive
-$bitlockerVolumes = Get-BitLockerVolume
+$bitlockerVolumes = Get-BitLockerVolume -ErrorAction SilentlyContinue
 
 # Variable to track if all volumes are decrypted
 $allDecrypted = $true
