@@ -71,9 +71,7 @@ ForEach($s in $Status){
             -Message "The OneDrive sync status is healthy. The following values were returned: OneDrive Display Name: $DisplayName, User: $User, Status: $StatusString"
         $details ="1337:The OneDrive sync status is healthy. The following values were returned: OneDrive Display Name: $DisplayName, User: $User, Status: $StatusString"
         
-        Insert-MigrationStatus "Checking OneDrive Status" $details "Check-OneDriveSyncStatus.ps1" "Info"
-
-        Start-ScheduledTask -TaskName "AADM Launch PSADT for Interactive Migration" -TaskPath '\AAD Migration\'
+        Insert-MigrationStatus "Checking OneDrive Status" $details "Check-OneDriveSyncStatus.ps1" "Info"    
 
 
     } elseif ($StatusString -in $InProgress) {

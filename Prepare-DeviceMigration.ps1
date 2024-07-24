@@ -682,6 +682,29 @@ Try {
 
         Start-ScheduledTask -TaskName "AADM Get Bitlocker Decrypt Status" -TaskPath $taskPath
         Start-ScheduledTask -TaskName "AADM Get OneDrive Sync Status" -TaskPath $taskPath
+
+        do{
+            $launchedMigration = $false
+            $Events1 = Get-EventLog -LogName Application -EntryType Information -Source 'AAD_Migration_Script2'
+            $Events2 = Get-EventLog -LogName Application -EntryType Information -Source 'AAD_Migration_Script'
+            $LastEvent1 = $Events1[0].InstanceId
+            $LastEvent2 = $Events2[0].InstanceId
+            
+            
+            If(($LastEvent1 -eq 1350) -and ($LastEvent2 -eq 1337)){
+                Start-ScheduledTask -TaskName "AADM Launch PSADT for Interactive Migration" -TaskPath '\AAD Migration\'
+                $launchedMigration = $true
+                Insert-MigrationStatus "Preparing Device" "Launched interactive migration" "Prepare-DeviceMigration.ps1" "Info"
+            }
+            else {
+                $launchedMigration = $false
+
+                Start-Sleep -Seconds 7
+                Insert-MigrationStatus "Preparing Device" "Bitlocker decrypt or OneDrive sync is not complete. Will check after 7 secs" "Prepare-DeviceMigration.ps1" "Info"
+            }
+        }while (-not $launchedMigration)
+
+        
         ##*===============================================
         ##* POST-INSTALLATION
         ##*===============================================
@@ -691,7 +714,7 @@ Try {
 
         ## Display a message at the end of the install
         If (-not $useDefaultMsi) {
-            Show-InstallationPrompt -Message 'You can customize text to appear at the end of an install or remove it completely for unattended installations.' -ButtonRightText 'OK' -Icon Information -NoWait
+            Show-InstallationPrompt -Message 'The device preperation is successfully. Now the migration process will start. Please do not do any activity on the device' -ButtonRightText 'OK' -Icon Information -NoWait
         }
     }
     ElseIf ($deploymentType -ieq 'Uninstall') {

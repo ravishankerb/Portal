@@ -152,7 +152,7 @@ Function Insert-MigrationStatus{
     try {
         $result = Invoke-RestMethod -Uri $requestUri -Headers $header -Method POST -ContentType "application/json" -Body $document
         
-        return "CreateItemSuccess";
+        return $details
     }
     catch {
         # Dig into the exception to get the Response details.
