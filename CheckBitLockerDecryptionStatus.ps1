@@ -46,7 +46,7 @@ foreach ($volume in $bitlockerVolumes) {
         $decryptionPercentage = 100 - $bitlockerStatus.EncryptionPercentage
         if ($decryptionPercentage -eq 100) {
             $message = "BitLocker decryption is complete on drive $volume."
-            Write-Event -message $message -eventID $eventID_DecryptionComplete
+            Write-Event -message $message -eventID $eventID_DecryptionInProgress
 
         } else {
             $message = "BitLocker decryption is in progress on drive $volume. Decryption Percentage: $decryptionPercentage%"
@@ -56,7 +56,7 @@ foreach ($volume in $bitlockerVolumes) {
 }   
 
 if ($allDecrypted) {
-    $message = "BitLocker decryption is complete on all volumens."
+    $message = "BitLocker decryption is complete on all volumes."
     Write-Event -message $message -eventID $eventID_DecryptionComplete
 } else {
     Write-Event -message $message -eventID $eventID_DecryptionInProgress
